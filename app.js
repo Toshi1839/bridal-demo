@@ -54,7 +54,14 @@
     check: '<path d="M4 12l5 5L20 6"/>',
     search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
     out: '<path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4M18 12H9"/>',
-    up: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/>'
+    up: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/>',
+    list: '<path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+    board: '<rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="10" rx="1"/><rect x="17" y="4" width="4" height="13" rx="1"/>',
+    box: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    grid: '<rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/>',
+    table: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 10h18M9 5v14"/>'
   };
   function icon(n) { return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + "</svg>"; }
 
@@ -76,7 +83,7 @@
   // ---------- 保存（このブラウザの中だけ） ----------
   function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify({ role: state.role, authed: state.authed, entries: state.entries })); } catch (e) { /* 保存できなくても動く */ }
+    try { localStorage.setItem(KEY, JSON.stringify({ role: state.role, authed: state.authed, entries: state.entries, orders: state.orders, costumes: state.costumes })); } catch (e) { /* 保存できなくても動く */ }
   }
   function seedEntries() {
     function d(n) { return ymd(addDays(TODAY, n)); }
@@ -197,7 +204,9 @@
     { id: "docs", grp: "ナレッジ", label: "社内規程", crumb: "ナレッジ", title: "社内規程", ico: "book", ok: function (a) { return !!a.docs; } },
     { id: "results", grp: "実績", label: "実績の表示", crumb: "実績", title: "実績の表示", ico: "chart", ok: function (a) { return !!a.results; } },
     { id: "input", grp: "実績", label: "実績の入力", crumb: "実績", title: "実績の入力", ico: "edit", ok: function (a) { return a.input; } },
-    { id: "confirm", grp: "実績", label: "実績の確定", crumb: "実績", title: "実績の確定", ico: "check", ok: function (a) { return a.confirm; } }
+    { id: "confirm", grp: "実績", label: "実績の確定", crumb: "実績", title: "実績の確定", ico: "check", ok: function (a) { return a.confirm; } },
+    { id: "orders", grp: "第3段階（オプション）", label: "受注管理", crumb: "第3段階（オプション） · 営業・顧客管理", title: "受注管理", ico: "list", ok: function () { return true; } },
+    { id: "inventory", grp: "第3段階（オプション）", label: "衣装在庫", crumb: "第3段階（オプション） · 在庫管理", title: "衣装在庫", ico: "box", ok: function () { return true; } }
   ];
   function navOf(id) { for (var i = 0; i < NAV.length; i++) if (NAV[i].id === id) return NAV[i]; return NAV[0]; }
   function route() { var h = location.hash.replace(/^#\/?/, ""); return h || "home"; }
@@ -280,6 +289,8 @@
     if (a.results) cards.push(["results", "実績の表示", "施行月・成約月で、前年比・計画比を見られます。毎朝6:00に更新します。"]);
     if (a.input) cards.push(["input", "実績の入力", "成約・施行の数字を入力します。入力のしかたは画面に表示されます。"]);
     if (a.confirm) cards.push(["confirm", "実績の確定", "現場が入力した数字を確認して確定します（確認待ち " + pendingCount() + " 件）。"]);
+    cards.push(["orders", "受注管理（第3段階・オプション）", "問合せから完了までを8つのステージで管理し、在庫の衣装を空き状況を見ながら仮押さえします。"]);
+    cards.push(["inventory", "衣装在庫（第3段階・オプション）", "衣装ごとの空き状況（今後13週）・予約・メンテナンスを確かめます。"]);
     var html = cards.map(function (c) {
       return '<a href="#/' + c[0] + '"><div class="card"><div class="card-h"><h3>' + esc(c[1]) + '</h3></div><div class="card-b"><p>' + esc(c[2]) +
         '</p><span class="go">開く →</span></div></div></a>';
@@ -708,6 +719,440 @@
     download("本社提出用_" + basisName() + "_" + FY_Y + "年度_" + (store === "all" ? "全店舗" : storeName(store)) + ".csv", rows);
   }
 
+  // ======================================================================
+  // 第3段階（オプション）：受注管理・衣装在庫（提案書の第3段階の画面を、操作できる形にしたもの）
+  // ======================================================================
+  var P = window.P3_DATA;
+  function dayStr(n) { return ymd(addDays(TODAY, n)); }
+  function toDate(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function dayDiff(a, b) { return Math.round((toDate(a) - toDate(b)) / 86400000); }
+  function noReq() { return { colors: [], colorNote: "", design: "", m: { bust: "", waist: "", hip: "", height: "", shoe: "" }, parts: [], detail: "", acc: "", other: "" }; }
+
+  function seedOrders() {
+    return P.orders.map(function (o) {
+      var x = JSON.parse(JSON.stringify(o));
+      x.date = dayStr(o.day);
+      x.contractDate = o.contract == null ? null : dayStr(o.contract);
+      var created = o.contract == null ? -7 : o.contract - 21;
+      x.history = [[dayStr(created), "問合せを受付"]];
+      if (o.contract != null) x.history.push([dayStr(o.contract), "成約（内金を請求）"]);
+      if (o.stage !== "問合せ") x.history.push([dayStr(o.day < 0 ? o.day + 1 : -2), "ステージを「" + o.stage + "」に変更"]);
+      delete x.day; delete x.contract;
+      return x;
+    });
+  }
+  function seedCostumes() {
+    return P.costumes.map(function (c) {
+      var x = JSON.parse(JSON.stringify(c));
+      x.backDate = c.back == null ? null : dayStr(c.back);
+      delete x.back;
+      return x;
+    });
+  }
+  state.orders = Array.isArray(saved.orders) ? saved.orders : seedOrders();
+  state.costumes = Array.isArray(saved.costumes) ? saved.costumes : seedCostumes();
+  state.p3 = { view: "list", store: "all", biz: "all", stage: "all", inv: { store: "all", cat: "all", status: "all", q: "", view: "gallery" }, drawer: null };
+
+  function bizOf(id) { for (var i = 0; i < P.businesses.length; i++) if (P.businesses[i].id === id) return P.businesses[i]; return P.businesses[0]; }
+  function catOf(code) { var id = code.split("-")[0]; for (var i = 0; i < P.categories.length; i++) if (P.categories[i].id === id) return P.categories[i]; return P.categories[0]; }
+  function cosOf(code) { for (var i = 0; i < state.costumes.length; i++) if (state.costumes[i].code === code) return state.costumes[i]; return null; }
+  function orderOf(no) { for (var i = 0; i < state.orders.length; i++) if (state.orders[i].no === no) return state.orders[i]; return null; }
+  function stageIdx(s) { return P.stages.indexOf(s); }
+  function stagePill(s) { return '<span class="pill ' + (P.stageTone[s] || "mute") + '">' + esc(s) + "</span>"; }
+  function bizTag(id) { var b = bizOf(id); return '<span class="tag ' + b.tone + '">' + esc(b.name) + "</span>"; }
+  function staffOf(store) { return D.staff.filter(function (s) { return s.store === store; }).map(function (s) { return s.name; }); }
+
+  // 衣装の絵（線と色だけの簡単なシルエット）
+  function mix(hex, to, t) {
+    var n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255];
+    return "rgb(" + c.map(function (v) { return Math.round(v + (to - v) * t); }).join(",") + ")";
+  }
+  function light(hex) { var n = parseInt(hex.slice(1), 16); return ((n >> 16) * 0.299 + (n >> 8 & 255) * 0.587 + (n & 255) * 0.114) / 255 > 0.78; }
+  function silhouette(shape, hex) {
+    var fill = hex, line = light(hex) ? "#B9AD94" : mix(hex, 0, 0.3);
+    var a = ' fill="' + fill + '" stroke="' + line + '" stroke-width="1.6" stroke-linejoin="round"';
+    var body;
+    if (shape === "tux") {
+      body = '<path' + a + ' d="M28 26 L42 18 L50 30 L58 18 L72 26 L74 100 L26 100 Z"/>' +
+        '<path fill="none" stroke="' + line + '" stroke-width="1.6" d="M42 18 L50 52 L58 18"/><circle cx="50" cy="64" r="1.8" fill="' + line + '"/><circle cx="50" cy="74" r="1.8" fill="' + line + '"/>';
+    } else if (shape === "kimono") {
+      body = '<path' + a + ' d="M20 26 L42 18 L50 26 L58 18 L80 26 L82 58 L66 58 L65 104 L35 104 L34 58 L18 58 Z"/>' +
+        '<path fill="none" stroke="' + line + '" stroke-width="1.6" d="M42 18 L50 44 L58 18"/><rect x="35" y="60" width="30" height="9" fill="' + mix(hex, 0, 0.18) + '" stroke="' + line + '" stroke-width="1.2"/>';
+    } else if (shape === "acc") {
+      body = '<path' + a + ' d="M24 74 Q50 34 76 74 L70 80 Q50 50 30 80 Z"/><circle cx="50" cy="44" r="4"' + a + '/><circle cx="36" cy="56" r="3"' + a + '/><circle cx="64" cy="56" r="3"' + a + "/>";
+    } else {
+      body = '<path' + a + ' d="M43 14 L57 14 L56 30 L44 30 Z"/><path' + a + ' d="M44 30 L56 30 L74 104 L26 104 Z"/>';
+    }
+    return '<svg viewBox="0 0 100 120" aria-hidden="true">' + body + "</svg>";
+  }
+  function cosImg(c) {
+    return '<div class="cimg" style="background:linear-gradient(165deg,' + mix(c.hex, 255, 0.88) + "," + mix(c.hex, 255, 0.7) + ')">' + silhouette(catOf(c.code).shape, c.hex) + "</div>";
+  }
+  function dot(c) { return '<span class="dot" style="background:' + c.hex + '" title="' + esc(c.color) + '"></span>'; }
+
+  // 空き状況：同じ衣装の予約（お日取りの前後3日）と、戻る日を見る
+  function reservations(code, exceptNo) {
+    return state.orders.filter(function (o) { return o.no !== exceptNo && o.stage !== "完了" && o.costumes.indexOf(code) >= 0; });
+  }
+  function availability(c, date, exceptNo) {
+    var clash = reservations(c.code, exceptNo).filter(function (o) { return Math.abs(dayDiff(o.date, date)) <= 3; })[0];
+    if (clash) return { ok: false, text: "この日は予約済み（" + clash.no + "）", cls: "av-bad" };
+    if (c.status !== "avail" && c.backDate) {
+      var label = c.status === "rented" ? "貸出中" : c.status === "cleaning" ? "クリーニング中" : "お直し中";
+      if (dayDiff(date, c.backDate) >= 2) return { ok: true, text: label + "・お日取り前に戻り", cls: "av-warn" };
+      return { ok: false, text: label + "・お日取りに間に合いません", cls: "av-bad" };
+    }
+    return { ok: true, text: "この日は貸出可", cls: "av-good" };
+  }
+  function cosStatus(c) {
+    if (c.status === "cleaning") return { label: "クリーニング中", tone: "info" };
+    if (c.status === "repair") return { label: "お直し中", tone: "info" };
+    if (c.status === "rented") return { label: "貸出中", tone: "rose" };
+    if (reservations(c.code).some(function (o) { return o.date >= TODAY_S; })) return { label: "予約済", tone: "gold" };
+    return { label: "貸出可", tone: "good" };
+  }
+
+  function p3Note() {
+    return '<div class="p3-note"><b>第3段階（オプション）</b>ご依頼の範囲（第1・第2段階）の外にある、弊社からの追加のご提案です。提案書の「第3段階（オプション）の画面」を、操作できる形にしました。</div>';
+  }
+  function sel(act, key, value, opts) {
+    return '<select data-act="' + act + '" data-k="' + key + '">' + opts.map(function (o) {
+      return '<option value="' + esc(o[0]) + '"' + (o[0] === value ? " selected" : "") + ">" + esc(o[1]) + "</option>";
+    }).join("") + "</select>";
+  }
+  var STORE_OPTS = [["all", "全店舗"]].concat(D.stores.map(function (s) { return [s.id, s.name]; }));
+
+  // ---------- 受注管理 ----------
+  function viewOrders() {
+    var f = state.p3;
+    var list = state.orders.filter(function (o) {
+      return (f.store === "all" || o.store === f.store) && (f.biz === "all" || o.biz === f.biz) && (f.stage === "all" || o.stage === f.stage);
+    });
+    var active = state.orders.filter(function (o) { return o.stage !== "完了"; }).length;
+    var soon = state.orders.filter(function (o) { return o.stage !== "完了" && o.date >= TODAY_S && o.date <= dayStr(30); }).length;
+    var waiting = state.orders.filter(function (o) { return o.stage === "成約" && !o.paid; }).length;
+    var done = state.orders.filter(function (o) { return o.stage === "完了" && o.date >= dayStr(-30); }).length;
+    var kpis = '<div class="kpis k4">' + kpi("進行中の受注", active + "件", "完了を除く") + kpi("30日以内のお日取り", soon + "件", "準備の確認を") +
+      kpi("内金待ち", waiting + "件", "成約済み・入金なし") + kpi("直近30日の完了", done + "件", "返却・残金の入金まで") + "</div>";
+    var filters = '<div class="filters">' + sel("p3-filter", "store", f.store, STORE_OPTS) +
+      sel("p3-filter", "biz", f.biz, [["all", "全事業"]].concat(P.businesses.map(function (b) { return [b.id, b.name]; }))) +
+      sel("p3-filter", "stage", f.stage, [["all", "全ステージ"]].concat(P.stages.map(function (s) { return [s, s]; }))) +
+      '<div class="seg" role="group" aria-label="表示"><button type="button" data-act="p3-view" data-v="list" class="' + (f.view === "list" ? "on" : "") + '">' + icon("list") + "一覧</button>" +
+      '<button type="button" data-act="p3-view" data-v="board" class="' + (f.view === "board" ? "on" : "") + '">' + icon("board") + "ボード</button></div>" +
+      '<span class="sp"></span><button class="btn pri" data-act="order-new">' + icon("plus") + "新規受注</button></div>";
+    var body;
+    if (f.view === "board") {
+      body = '<div class="board">' + P.stages.map(function (s) {
+        var cards = list.filter(function (o) { return o.stage === s; }).map(function (o) {
+          return '<button type="button" class="ocard" data-act="order-open" data-no="' + o.no + '"><span class="ono">' + o.no + "</span><b>" + esc(o.customer) + "</b><small>" +
+            esc(slashDate(o.date)) + " · " + esc(storeName(o.store)) + "</small>" + bizTag(o.biz) + "<small>" + yen(o.amount) + "</small></button>";
+        }).join("");
+        return '<div class="bcol"><div class="bcol-h">' + stagePill(s) + "<span>" + list.filter(function (o) { return o.stage === s; }).length + "件</span></div>" + cards + "</div>";
+      }).join("") + "</div>";
+    } else {
+      var rows = list.map(function (o) {
+        var cs = o.costumes.map(cosOf).filter(Boolean);
+        return '<tr class="click" data-act="order-open" data-no="' + o.no + '"><td><span class="ono">' + o.no + "</span></td><td><b>" + esc(o.customer) + "</b></td><td>" + bizTag(o.biz) +
+          "</td><td>" + esc(storeName(o.store)) + "</td><td>" + (cs.length ? '<span class="dots">' + cs.map(dot).join("") + " " + cs.length + "</span>" : "—") +
+          "</td><td>" + esc(slashDate(o.date)) + "</td><td>" + stagePill(o.stage) + '</td><td class="num">' + yen(o.amount) + "</td><td>" + esc(o.staff) + "</td><td>" +
+          '<button class="ibtn" data-act="order-open" data-no="' + o.no + '" title="表示" aria-label="表示">' + icon("eye") + "</button> " +
+          '<button class="ibtn" data-act="order-edit" data-no="' + o.no + '" title="編集" aria-label="編集">' + icon("edit") + "</button></td></tr>";
+      }).join("") || '<tr><td colspan="10">条件に合う受注はありません。</td></tr>';
+      body = '<div class="card"><div class="tbl-wrap"><table><thead><tr><th>受注番号</th><th>お客様</th><th>事業</th><th>店舗</th><th>衣装</th><th>お日取り</th><th>ステージ</th><th class="num">金額</th><th>担当</th><th>操作</th></tr></thead><tbody>' +
+        rows + "</tbody></table></div></div>";
+    }
+    return p3Note() + kpis + filters + body;
+  }
+
+  function orderDrawer(o) {
+    var idx = stageIdx(o.stage), next = P.stages[idx + 1];
+    var cs = o.costumes.map(cosOf).filter(Boolean);
+    var steps = P.stages.map(function (s, i) {
+      return '<div class="stp' + (i < idx ? " done" : i === idx ? " cur" : "") + '"><span class="c">' + (i < idx ? "✓" : i + 1) + '</span><span class="l">' + esc(s) + "</span></div>";
+    }).join("");
+    var nextCard;
+    if (next) {
+      var items = P.checklists[o.stage] || [];
+      var checks = o.checks || [];
+      var all = items.every(function (t, i) { return !!checks[i]; });
+      nextCard = '<div class="card"><div class="card-h"><h3>次のステップ：' + esc(next) + '</h3><span class="sub">チェックリストを完了すると次へ進めます</span></div><div class="card-b"><div class="checklist">' +
+        items.map(function (t, i) { return '<label class="ck"><input type="checkbox" data-act="order-check" data-no="' + o.no + '" data-i="' + i + '"' + (checks[i] ? " checked" : "") + ">" + esc(t) + "</label>"; }).join("") +
+        '</div><div class="ck-acts"><button class="btn' + (all ? " pri" : "") + '" data-act="order-next" data-no="' + o.no + '"' + (all ? "" : " disabled") + ">次へ：" + esc(next) + "</button>" +
+        '<span class="sp"></span><button class="linkbtn" data-act="order-cancel">受注をキャンセル</button></div></div></div>';
+    } else {
+      nextCard = '<div class="notice">この受注は完了しています（返却・残金の入金まで確認済み）。</div>';
+    }
+    var tiles = '<div class="itiles">' + itile("お日取り", slashDate(o.date)) + itile("会場・用途", o.venue || "—") + itile("成約日", o.contractDate ? slashDate(o.contractDate) : "まだ成約していません") +
+      itile("受注金額", yen(o.amount)) + itile("入金済み", yen(o.paid || 0)) + itile("残金", yen(o.amount - (o.paid || 0))) + "</div>";
+    var total = cs.reduce(function (s, c) { return s + c.price; }, 0);
+    var cosCard = '<div class="card"><div class="card-h"><h3>在庫から選んだ衣装</h3><span class="sub">' + cs.length + " 点 · " + yen(total) + "</span></div><div class=\"card-b\">" +
+      (cs.length ? '<div class="cgrid">' + cs.map(function (c) {
+        return '<button type="button" class="cpick" data-act="cos-open" data-code="' + c.code + '">' + cosImg(c) + '<div class="cmeta"><span class="code">' + esc(c.code) + " · " + esc(c.size) + '</span><span class="nm">' + esc(c.name) +
+          '</span><span class="pr">' + esc(c.color) + " · " + yen(c.price) + "</span></div></button>";
+      }).join("") + "</div>" : '<p class="note-sm">まだ衣装を選んでいません。「編集」から、在庫の衣装を空き状況を見ながら選べます。</p>') + "</div></div>";
+    var r = o.req || noReq(), m = r.m || {};
+    var reqRows = [
+      ["色の希望", (r.colors || []).join("・") + (r.colorNote ? "（" + r.colorNote + "）" : "")],
+      ["デザインの希望", r.design],
+      ["採寸（cm）", [["バスト", m.bust], ["ウエスト", m.waist], ["ヒップ", m.hip], ["身長", m.height], ["靴", m.shoe]].filter(function (x) { return x[1]; }).map(function (x) { return x[0] + " " + x[1]; }).join(" · ")],
+      ["お直し", (r.parts || []).join("・") + (r.detail ? "：" + r.detail : "")],
+      ["小物のご希望", r.acc], ["その他のご要望", r.other]
+    ].filter(function (x) { return x[1]; });
+    var reqCard = '<div class="card"><div class="card-h"><h3>お客様のご要望</h3><span class="sub">色・デザイン・採寸・お直し</span></div>' +
+      (reqRows.length ? '<div class="tbl-wrap"><table class="sumtbl"><tbody>' + reqRows.map(function (x) { return "<tr><td>" + esc(x[0]) + "</td><td>" + esc(x[1]) + "</td></tr>"; }).join("") + "</tbody></table></div>"
+        : '<div class="card-b note-sm">まだ記録がありません。「編集」の「ご要望・お直し」から記録できます。</div>') + "</div>";
+    var ex = o.expenses || [];
+    var exCard = '<div class="card"><div class="card-h"><h3>関連する経費</h3><span class="sp"></span><button class="btn sm" data-act="p3-demo" data-msg="デモでは経費を追加できません。本番では、お直しの外注費などをこの受注にひも付けて記録します。">' + icon("plus") + "経費を追加</button></div>" +
+      (ex.length ? '<div class="tbl-wrap"><table><tbody>' + ex.map(function (x) { return "<tr><td>" + esc(x[0]) + '</td><td class="num">' + yen(x[1]) + "</td></tr>"; }).join("") +
+        '<tr class="tot"><td>合計</td><td class="num">' + yen(ex.reduce(function (s, x) { return s + x[1]; }, 0)) + "</td></tr></tbody></table></div>" : '<div class="card-b note-sm">関連する経費はまだありません。</div>') + "</div>";
+    var hist = '<div class="card"><div class="card-h"><h3>履歴</h3></div><div class="card-b"><ul class="tl">' + o.history.slice().reverse().map(function (h) {
+      return '<li><span class="d">' + esc(slashDate(h[0])) + "</span><br>" + esc(h[1]) + "</li>";
+    }).join("") + "</ul></div></div>";
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(o.no + " · " + storeName(o.store) + " · 担当: " + o.staff) + "</div><h2>" + esc(o.customer) + '</h2><div class="dh-tags">' +
+      bizTag(o.biz) + stagePill(o.stage) + '<span class="tag plain">' + esc(o.source) + "</span></div></div>" +
+      '<div class="dh-acts"><button class="btn" data-act="order-edit" data-no="' + o.no + '">' + icon("edit") + '編集</button><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
+    return head + '<div class="drawer-b"><div class="card"><div class="stepper">' + steps + "</div></div>" + nextCard + tiles + cosCard + reqCard + exCard + hist + "</div>";
+  }
+  function itile(k, v) { return '<div class="itile"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
+
+  // ---------- 受注の登録・編集（4つの手順） ----------
+  var WIZ = ["お客様・お日取り", "衣装を選択", "ご要望・お直し", "確認"];
+  function draftFrom(o) {
+    if (o) return JSON.parse(JSON.stringify({ no: o.no, customer: o.customer, biz: o.biz, store: o.store, date: o.date, venue: o.venue, staff: o.staff, source: o.source, amount: String(o.amount), costumes: o.costumes, req: o.req || noReq() }));
+    var store = U().store || "A";
+    return { no: null, customer: "", biz: "bridal", store: store, date: dayStr(120), venue: "", staff: staffOf(store)[0], source: "来店", amount: "", costumes: [], req: noReq() };
+  }
+  function draftTotal(dr) { return dr.costumes.map(cosOf).filter(Boolean).reduce(function (s, c) { return s + c.price; }, 0); }
+  function editDrawer(d) {
+    var dr = d.draft, step = d.step;
+    var tabs = '<div class="wsteps">' + WIZ.map(function (t, i) {
+      return '<button type="button" class="wst' + (step === i + 1 ? " on" : "") + '" data-act="wiz-step" data-s="' + (i + 1) + '">' + (i + 1) + ". " + t + "</button>";
+    }).join("") + "</div>";
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(dr.no || "新しい受注") + "</div><h2>" + (dr.no ? "受注を編集" : "新規受注") + "</h2>" + tabs + "</div>" +
+      '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
+    var body = "";
+    if (step === 1) {
+      var opt = function (list, v) { return list.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === v ? " selected" : "") + ">" + esc(x[1]) + "</option>"; }).join(""); };
+      body = '<div class="card"><div class="card-b"><div class="form-grid">' +
+        '<div class="field"><label for="w-cus">お客様のお名前<span class="req">必須</span></label><input type="text" id="w-cus" data-draft="customer" value="' + esc(dr.customer) + '" placeholder="例：佐藤様・田中様"></div>' +
+        '<div class="field"><label for="w-biz">事業</label><select id="w-biz" data-draft="biz">' + opt(P.businesses.map(function (b) { return [b.id, b.name]; }), dr.biz) + "</select></div>" +
+        '<div class="field"><label for="w-store">店舗</label><select id="w-store" data-draft="store">' + opt(D.stores.map(function (s) { return [s.id, s.name]; }), dr.store) + "</select></div>" +
+        '<div class="field"><label for="w-date">お日取り<span class="req">必須</span></label><input type="date" id="w-date" data-draft="date" value="' + esc(dr.date) + '"><p class="help">衣装の空き状況は、この日で確かめます。</p></div>' +
+        '<div class="field"><label for="w-venue">会場・用途</label><input type="text" id="w-venue" data-draft="venue" value="' + esc(dr.venue) + '" placeholder="例：ホテル挙式、前撮り（スタジオ）"></div>' +
+        '<div class="field"><label for="w-staff">担当</label><select id="w-staff" data-draft="staff">' + opt(staffOf(dr.store).map(function (n) { return [n, n]; }), dr.staff) + "</select></div>" +
+        '<div class="field"><label for="w-src">経路</label><select id="w-src" data-draft="source">' + opt(P.sources.map(function (s) { return [s, s]; }), dr.source) + "</select></div>" +
+        '<div class="field"><label for="w-amt">受注金額（税別・見込み）</label><input type="number" id="w-amt" data-draft="amount" value="' + esc(dr.amount) + '" min="0" step="1000" placeholder="空欄なら、選んだ衣装の合計"></div>' +
+        "</div></div></div>";
+    } else if (step === 2) {
+      var cats = P.categories.filter(function (c) { return c.biz.indexOf(dr.biz) >= 0; });
+      var cat = d.cat || "all";
+      var chips = '<div class="chips"><button type="button" class="chip' + (cat === "all" ? " on" : "") + '" data-act="wiz-cat" data-c="all">すべて：' + esc(bizOf(dr.biz).name) + "</button>" +
+        cats.map(function (c) { return '<button type="button" class="chip' + (cat === c.id ? " on" : "") + '" data-act="wiz-cat" data-c="' + c.id + '">' + esc(c.name) + "</button>"; }).join("") + "</div>";
+      var items = state.costumes.filter(function (c) { var k = catOf(c.code); return k.biz.indexOf(dr.biz) >= 0 && (cat === "all" || k.id === cat); });
+      var cards = items.map(function (c) {
+        var av = availability(c, dr.date, dr.no), on = dr.costumes.indexOf(c.code) >= 0;
+        return '<button type="button" class="cpick' + (on ? " sel" : "") + (!av.ok && !on ? " na" : "") + '" data-act="wiz-pick" data-code="' + c.code + '">' + (on ? '<span class="chk">✓</span>' : "") + cosImg(c) +
+          '<div class="cmeta"><span class="code">' + esc(c.code + " · " + c.size + " · " + storeName(c.store)) + '</span><span class="nm">' + esc(c.name) + '</span><span class="pr">' + yen(c.price) +
+          '</span><span class="' + av.cls + '">' + esc(av.text) + "</span></div></button>";
+      }).join("");
+      body = '<div class="card"><div class="card-b" style="display:grid;gap:12px">' + chips +
+        '<div class="filters"><span class="note-sm">選んだ衣装：' + dr.costumes.length + " 点 · " + yen(draftTotal(dr)) + '</span><span class="sp"></span><span class="note-sm">空き状況の確認日：' + esc(slashDate(dr.date)) + "</span></div>" +
+        '<div class="cgrid">' + cards + "</div></div></div>";
+    } else if (step === 3) {
+      var r = dr.req;
+      var colorChips = P.colorChoices.map(function (c) { return '<button type="button" class="chip' + (r.colors.indexOf(c) >= 0 ? " on" : "") + '" data-act="wiz-color" data-v="' + c + '">' + c + "</button>"; }).join("");
+      var partChips = P.alterParts.map(function (c) { return '<button type="button" class="chip' + (r.parts.indexOf(c) >= 0 ? " on" : "") + '" data-act="wiz-part" data-v="' + c + '">' + c + "</button>"; }).join("");
+      var mf = [["bust", "バスト"], ["waist", "ウエスト"], ["hip", "ヒップ"], ["height", "身長"], ["shoe", "靴"]].map(function (x) {
+        return "<label>" + x[1] + '<input type="number" data-draft="req.m.' + x[0] + '" value="' + esc(r.m[x[0]]) + '" inputmode="decimal"></label>';
+      }).join("");
+      body = '<div class="card"><div class="card-b" style="display:grid;gap:14px">' +
+        '<div class="field"><span class="label">色の希望</span><div class="chips">' + colorChips + '</div><input type="text" data-draft="req.colorNote" value="' + esc(r.colorNote) + '" placeholder="例：純白よりアイボリー、カラードレスはダスティピンク"></div>' +
+        '<div class="field"><label for="w-design">デザインの希望</label><input type="text" id="w-design" data-draft="req.design" value="' + esc(r.design) + '" placeholder="例：Aライン、レース袖、ロングトレーン"></div>' +
+        '<div class="field"><span class="label">採寸（cm）</span><div class="mgrid">' + mf + "</div></div>" +
+        '<div class="field"><span class="label">お直しの箇所</span><div class="chips">' + partChips + "</div></div>" +
+        '<div class="field"><label for="w-detail">お直しの詳細</label><textarea id="w-detail" data-draft="req.detail" placeholder="例：5cmヒール用に裾−3cm、ウエスト1.5cm詰め">' + esc(r.detail) + "</textarea></div>" +
+        '<div class="form-grid"><div class="field"><label for="w-acc">小物のご希望</label><input type="text" id="w-acc" data-draft="req.acc" value="' + esc(r.acc) + '"></div>' +
+        '<div class="field"><label for="w-other">その他のご要望</label><input type="text" id="w-other" data-draft="req.other" value="' + esc(r.other) + '"></div></div>' +
+        '<p class="p3-note" style="margin:0">お直しの詳細は、お直し依頼書と関連する経費にそのまま引き継がれ、縫製担当と経理が同じ内容を確認できます。</p></div></div>';
+    } else {
+      var cs = dr.costumes.map(cosOf).filter(Boolean);
+      var amt = Number(dr.amount) || draftTotal(dr);
+      var rows = [["お客様", dr.customer || "（未入力）"], ["事業", bizOf(dr.biz).name], ["店舗", storeName(dr.store)], ["お日取り", dr.date ? slashDate(dr.date) : "（未入力）"],
+        ["会場・用途", dr.venue || "—"], ["担当", dr.staff], ["経路", dr.source], ["受注金額（税別）", yen(amt)],
+        ["衣装", cs.length ? cs.map(function (c) { return c.code + " " + c.name; }).join("、") : "選んでいません"],
+        ["ご要望", [dr.req.colors.join("・"), dr.req.design, dr.req.parts.length ? "お直し：" + dr.req.parts.join("・") : ""].filter(Boolean).join(" / ") || "—"]];
+      body = '<div class="card"><div class="tbl-wrap"><table class="sumtbl"><tbody>' + rows.map(function (x) { return "<tr><td>" + esc(x[0]) + "</td><td>" + esc(x[1]) + "</td></tr>"; }).join("") +
+        '</tbody></table></div><p class="hint">保存すると、選んだ衣装をお日取りに仮押さえします。ほかの受注では、その前後の日に選べなくなります。</p></div>';
+    }
+    var foot = '<div class="wfoot">' + (step > 1 ? '<button class="btn" data-act="wiz-step" data-s="' + (step - 1) + '">戻る</button>' : '<button class="btn" data-act="drawer-close">閉じる</button>') +
+      (step < 4 ? '<button class="btn pri" data-act="wiz-step" data-s="' + (step + 1) + '">次へ</button>' : '<button class="btn pri" data-act="wiz-save">保存して仮押さえ</button>') + "</div>";
+    return head + '<div class="drawer-b">' + body + foot + "</div>";
+  }
+  function setDraft(path, value) {
+    var dr = state.p3.drawer && state.p3.drawer.draft;
+    if (!dr) return;
+    var keys = path.split("."), o = dr;
+    for (var i = 0; i < keys.length - 1; i++) o = o[keys[i]];
+    o[keys[keys.length - 1]] = value;
+  }
+  function nextNo() {
+    var max = state.orders.reduce(function (m, o) { return Math.max(m, +o.no.split("-")[2]); }, 0);
+    return "OR-26-" + String(max + 1).padStart(4, "0");
+  }
+  function saveDraft() {
+    var d = state.p3.drawer, dr = d.draft;
+    if (!String(dr.customer).trim() || !dr.date) { d.step = 1; render(); toast("お客様のお名前とお日取りを入力してください。"); return; }
+    var o = dr.no ? orderOf(dr.no) : null;
+    if (!o) {
+      o = { no: nextNo(), stage: "打合せ・試着", paid: 0, contractDate: null, expenses: [], history: [[TODAY_S, "受注を登録"]] };
+      o.checks = (P.checklists[o.stage] || []).map(function () { return false; });
+      state.orders.unshift(o);
+    } else {
+      o.history.push([TODAY_S, "受注を編集"]);
+    }
+    ["customer", "biz", "store", "date", "venue", "staff", "source"].forEach(function (k) { o[k] = dr[k]; });
+    o.amount = Number(dr.amount) || draftTotal(dr);
+    var added = dr.costumes.filter(function (c) { return (o.costumes || []).indexOf(c) < 0; });
+    o.costumes = dr.costumes.slice();
+    o.req = JSON.parse(JSON.stringify(dr.req));
+    if (added.length) o.history.push([TODAY_S, "衣装を仮押さえ（" + added.join("・") + "）"]);
+    save();
+    state.p3.drawer = { type: "order", no: o.no };
+    render();
+    toast(added.length ? "受注を保存し、選んだ衣装をお日取りに仮押さえしました。" : "受注を保存しました。");
+  }
+
+  // ---------- 衣装在庫 ----------
+  function invFiltered() {
+    var f = state.p3.inv, q = norm(f.q);
+    return state.costumes.filter(function (c) {
+      var st = cosStatus(c).label;
+      return (f.store === "all" || c.store === f.store) && (f.cat === "all" || catOf(c.code).id === f.cat) && (f.status === "all" || st === f.status) &&
+        (!q || norm(c.code + c.name + c.color).indexOf(q) >= 0);
+    });
+  }
+  function invListHtml() {
+    var f = state.p3.inv, list = invFiltered();
+    var head = '<p class="note-sm" style="margin-bottom:10px">サンプル ' + list.length + " 点を表示</p>";
+    if (!list.length) return head + '<div class="notice">条件に合う衣装はありません。</div>';
+    if (f.view === "table") {
+      return head + '<div class="card"><div class="tbl-wrap"><table><thead><tr><th>品番</th><th>名称</th><th>カテゴリ</th><th>色</th><th>サイズ</th><th class="num">レンタル料</th><th>店舗</th><th>状態</th><th class="num">貸出回数</th><th>次の予約</th></tr></thead><tbody>' +
+        list.map(function (c) {
+          var st = cosStatus(c), nx = reservations(c.code).filter(function (o) { return o.date >= TODAY_S; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
+          return '<tr class="click" data-act="cos-open" data-code="' + c.code + '"><td><span class="ono">' + esc(c.code) + "</span></td><td><b>" + esc(c.name) + "</b></td><td>" + esc(catOf(c.code).name) +
+            '</td><td><span class="colorline">' + dot(c) + esc(c.color) + "</span></td><td>" + esc(c.size) + '</td><td class="num">' + yen(c.price) + "</td><td>" + esc(storeName(c.store)) +
+            '</td><td><span class="pill ' + st.tone + '">' + st.label + '</span></td><td class="num">' + c.rentals + "回</td><td>" + (nx ? esc(slashDate(nx.date)) + " " + esc(nx.no) : "—") + "</td></tr>";
+        }).join("") + "</tbody></table></div></div>";
+    }
+    return head + '<div class="inv-grid">' + list.map(function (c) {
+      var st = cosStatus(c);
+      return '<button type="button" class="cpick icard" data-act="cos-open" data-code="' + c.code + '"><span class="pill ' + st.tone + ' st">' + st.label + "</span>" + cosImg(c) +
+        '<div class="cmeta"><span class="code">' + esc(c.code + " · " + catOf(c.code).name) + '</span><span class="nm">' + esc(c.name) + "</span>" +
+        '<span class="colorline">' + dot(c) + esc(c.color + " · " + c.size) + '<span style="margin-left:auto">' + yen(c.price) + "</span></span>" +
+        '<span class="code">' + esc(storeName(c.store)) + " · " + c.rentals + "回貸出</span></div></button>";
+    }).join("") + "</div>";
+  }
+  function viewInventory() {
+    var f = state.p3.inv, all = state.costumes;
+    var avail = all.filter(function (c) { return c.status === "avail" && availability(c, TODAY_S).ok; }).length;
+    var busy = all.filter(function (c) { return c.status === "rented" || reservations(c.code).some(function (o) { return o.date >= TODAY_S && o.date <= dayStr(30); }); }).length;
+    var maint = all.filter(function (c) { return c.status === "cleaning" || c.status === "repair"; });
+    var backSoon = maint.filter(function (c) { return c.backDate && c.backDate <= dayStr(7); }).length;
+    var kpis = '<div class="kpis k4">' + kpi("在庫点数", all.length + "点", "サンプル · ドレス・和装・タキシード・小物") + kpi("本日貸出可", avail + "点", "在庫の " + Math.round(avail / all.length * 100) + "%") +
+      kpi("貸出中・予約済", busy + "点", "今後30日") + kpi("お直し・クリーニング中", maint.length + "点", "今週戻り予定 " + backSoon + "点") + "</div>";
+    var statuses = ["貸出可", "予約済", "貸出中", "クリーニング中", "お直し中"];
+    var filters = '<div class="filters">' + sel("inv-filter", "store", f.store, STORE_OPTS) +
+      sel("inv-filter", "cat", f.cat, [["all", "全カテゴリ"]].concat(P.categories.map(function (c) { return [c.id, c.name]; }))) +
+      sel("inv-filter", "status", f.status, [["all", "全ての状態"]].concat(statuses.map(function (s) { return [s, s]; }))) +
+      '<label class="srch">' + icon("search") + '<input type="text" data-act="inv-q" value="' + esc(f.q) + '" placeholder="品番・名称・色" aria-label="品番・名称・色で探す"></label>' +
+      '<div class="seg" role="group" aria-label="表示"><button type="button" data-act="inv-view" data-v="gallery" class="' + (f.view === "gallery" ? "on" : "") + '">' + icon("grid") + "ギャラリー</button>" +
+      '<button type="button" data-act="inv-view" data-v="table" class="' + (f.view === "table" ? "on" : "") + '">' + icon("table") + "表</button></div>" +
+      '<span class="sp"></span><button class="btn" data-act="p3-demo" data-msg="デモでは取り込めません。本番では、Excel の在庫リストをそのまま取り込めます。">' + icon("up") + "在庫リストを取込</button>" +
+      '<button class="btn pri" data-act="p3-demo" data-msg="デモでは登録できません。本番では、写真・サイズ・料金を入れて衣装を登録します。">' + icon("plus") + "衣装を登録</button></div>";
+    return p3Note() + kpis + filters + '<div id="inv-list">' + invListHtml() + "</div>";
+  }
+  function costumeDrawer(c) {
+    var st = cosStatus(c), cat = catOf(c.code);
+    var ws = addDays(TODAY, -TODAY.getDay());
+    var cells = [], first = ymd(ws), last = ymd(addDays(ws, 13 * 7 - 1));
+    var res = reservations(c.code);
+    for (var i = 0; i < 13; i++) {
+      var a = ymd(addDays(ws, i * 7)), b = ymd(addDays(ws, i * 7 + 6));
+      var r = res.some(function (o) { return o.date >= a && o.date <= b; });
+      var mnt = c.status !== "avail" && c.backDate && a <= c.backDate;
+      cells.push('<span class="wk' + (r ? " res" : mnt ? " mnt" : "") + '" title="' + esc(slashDate(a) + "〜" + slashDate(b)) + '"></span>');
+    }
+    var resRows = res.slice().sort(function (x, y) { return x.date < y.date ? -1 : 1; }).map(function (o) {
+      return '<div class="r" data-act="order-open" data-no="' + o.no + '"><span>' + esc(slashDate(o.date)) + ' · <span class="ono">' + o.no + "</span> " + esc(o.customer) + '</span><span class="sp" style="flex:1"></span>' + stagePill(o.stage) + "</div>";
+    }).join("") || '<p class="note-sm">予約はありません。</p>';
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(c.code + " · " + cat.name + " · " + storeName(c.store)) + "</div><h2>" + esc(c.name) + '</h2><div class="dh-tags"><span class="pill ' + st.tone + '">' + st.label + "</span></div></div>" +
+      '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
+    return head + '<div class="drawer-b"><div class="cos-top">' + cosImg(c) + '<div class="itiles">' +
+      '<div class="itile"><div class="k">色</div><div class="v"><span class="colorline">' + dot(c) + esc(c.color) + "</span></div></div>" +
+      itile("サイズ", c.size) + itile("レンタル料", yen(c.price)) + itile("貸出回数", c.rentals + "回") + itile("保管場所", storeName(c.store)) + itile("購入日", c.bought) + "</div></div>" +
+      '<div class="card"><div class="card-h"><h3>空き状況 · 今後13週</h3><span class="sp"></span><span class="lg"><span><i style="background:#E3F1EA"></i>空き</span><span><i style="background:var(--gold)"></i>予約</span><span><i style="background:#F6E3C8"></i>メンテナンス</span></span></div>' +
+      '<div class="card-b"><div class="weeks">' + cells.join("") + '</div><div class="wk-dates"><span>' + esc(slashDate(first)) + "</span><span>" + esc(slashDate(last)) + "</span></div></div></div>" +
+      '<div class="card"><div class="card-h"><h3>予約</h3><span class="sub">受注ごとの仮押さえ</span></div><div class="card-b rlist">' + resRows + "</div></div>" +
+      '<div class="card"><div class="card-h"><h3>メンテナンス履歴</h3></div><div class="card-b"><ul class="tl">' + c.log.map(function (h) { return '<li><span class="d">' + esc(h[0]) + "</span><br>" + esc(h[1]) + "</li>"; }).join("") + "</ul></div></div>" +
+      '<div class="form-actions" style="margin-top:0"><button class="btn" data-act="cos-clean" data-code="' + c.code + '">クリーニングに出す</button><button class="btn" data-act="cos-avail" data-code="' + c.code + '">貸出可にする</button></div></div>';
+  }
+  function drawerHtml() {
+    var d = state.p3.drawer;
+    if (!d) return "";
+    var inner = "";
+    if (d.type === "order") { var o = orderOf(d.no); if (!o) return ""; inner = orderDrawer(o); }
+    if (d.type === "edit") inner = editDrawer(d);
+    if (d.type === "costume") { var c = cosOf(d.code); if (!c) return ""; inner = costumeDrawer(c); }
+    return '<div class="overlay" data-act="drawer-close"></div><aside class="drawer" role="dialog" aria-modal="true">' + inner + "</aside>";
+  }
+  var p3Acts = {
+    "p3-filter": function (el) { state.p3[el.getAttribute("data-k")] = el.value; render(); },
+    "p3-view": function (el) { state.p3.view = el.getAttribute("data-v"); render(); },
+    "p3-demo": function (el) { toast(el.getAttribute("data-msg")); },
+    "order-open": function (el) { state.p3.drawer = { type: "order", no: el.getAttribute("data-no") }; render(); },
+    "order-edit": function (el) { state.p3.drawer = { type: "edit", step: 1, cat: "all", draft: draftFrom(orderOf(el.getAttribute("data-no"))) }; render(); },
+    "order-new": function () { state.p3.drawer = { type: "edit", step: 1, cat: "all", draft: draftFrom(null) }; render(); },
+    "order-check": function (el) {
+      var o = orderOf(el.getAttribute("data-no")); if (!o) return;
+      o.checks = o.checks || []; o.checks[+el.getAttribute("data-i")] = el.checked; save(); render();
+    },
+    "order-next": function (el) {
+      var o = orderOf(el.getAttribute("data-no")); if (!o) return;
+      var next = P.stages[stageIdx(o.stage) + 1]; if (!next) return;
+      if (next === "成約" && !o.contractDate) o.contractDate = TODAY_S;
+      if (next === "確定" && !o.paid) o.paid = Math.round(o.amount * 0.3 / 1000) * 1000;
+      if (next === "完了") o.paid = o.amount;
+      o.stage = next; o.checks = (P.checklists[next] || []).map(function () { return false; });
+      o.history.push([TODAY_S, "ステージを「" + next + "」に変更"]);
+      save(); render(); toast("ステージを「" + next + "」に進めました。");
+    },
+    "order-cancel": function () { toast("デモではキャンセルできません。本番では、キャンセルすると仮押さえした衣装も自動で解放されます。"); },
+    "drawer-close": function () { state.p3.drawer = null; render(); },
+    "wiz-step": function (el) { state.p3.drawer.step = +el.getAttribute("data-s"); render(); var dw = document.querySelector(".drawer"); if (dw) dw.scrollTop = 0; },
+    "wiz-cat": function (el) { state.p3.drawer.cat = el.getAttribute("data-c"); render(); },
+    "wiz-pick": function (el) {
+      var dr = state.p3.drawer.draft, code = el.getAttribute("data-code"), i = dr.costumes.indexOf(code);
+      if (i >= 0) { dr.costumes.splice(i, 1); render(); return; }
+      var av = availability(cosOf(code), dr.date, dr.no);
+      if (!av.ok) { toast(av.text + "。ほかの衣装を選んでください。"); return; }
+      dr.costumes.push(code); render();
+    },
+    "wiz-color": function (el) { var a = state.p3.drawer.draft.req.colors, v = el.getAttribute("data-v"), i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else a.push(v); render(); },
+    "wiz-part": function (el) { var a = state.p3.drawer.draft.req.parts, v = el.getAttribute("data-v"), i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else a.push(v); render(); },
+    "wiz-save": function () { saveDraft(); },
+    "inv-filter": function (el) { state.p3.inv[el.getAttribute("data-k")] = el.value; render(); },
+    "inv-view": function (el) { state.p3.inv.view = el.getAttribute("data-v"); render(); },
+    "cos-open": function (el) { state.p3.drawer = { type: "costume", code: el.getAttribute("data-code") }; render(); },
+    "cos-clean": function (el) {
+      var c = cosOf(el.getAttribute("data-code")); c.status = "cleaning"; c.backDate = dayStr(5); c.log.unshift([slashDate(TODAY_S), "クリーニングに出す（" + slashDate(c.backDate) + " に戻り予定）"]);
+      save(); render(); toast("クリーニングに出しました。戻る日まで、空き状況に「メンテナンス」と表示されます。");
+    },
+    "cos-avail": function (el) {
+      var c = cosOf(el.getAttribute("data-code")); c.status = "avail"; c.backDate = null; c.log.unshift([slashDate(TODAY_S), "検品済み・貸出可にする"]);
+      save(); render(); toast("貸出可にしました。");
+    }
+  };
+
   // ---------- 描画 ----------
   function render() {
     if (!state.authed) {
@@ -716,8 +1161,18 @@
     }
     var r = route();
     if (!allowed(r)) { location.replace("#/home"); r = "home"; }
-    var inner = r === "ai" ? viewAI() : r === "docs" ? viewDocs() : r === "input" ? viewInput() : r === "confirm" ? viewConfirm() : r === "results" ? viewResults() : viewHome();
-    app.innerHTML = shell(r, inner);
+    if (r !== "orders" && r !== "inventory") state.p3.drawer = null;
+    var oldDw = document.querySelector(".drawer"), dwTop = oldDw ? oldDw.scrollTop : 0, dwKey = oldDw ? oldDw.getAttribute("data-key") : null;
+    var inner = r === "ai" ? viewAI() : r === "docs" ? viewDocs() : r === "input" ? viewInput() : r === "confirm" ? viewConfirm() : r === "results" ? viewResults() :
+      r === "orders" ? viewOrders() : r === "inventory" ? viewInventory() : viewHome();
+    app.innerHTML = shell(r, inner) + drawerHtml();
+    var dw = document.querySelector(".drawer");
+    document.body.classList.toggle("noscroll", !!dw);
+    if (dw) {
+      var d = state.p3.drawer, key = d.type + ":" + (d.no || d.code || (d.draft && d.draft.no) || "new") + ":" + (d.step || "");
+      dw.setAttribute("data-key", key);
+      if (key === dwKey) dw.scrollTop = dwTop;
+    }
     if (r === "ai") {
       var box = document.getElementById("msgs");
       if (box) box.scrollTop = box.scrollHeight;
@@ -763,10 +1218,14 @@
     "csv-hq": function () { csvHQ(); },
     "reset": function () {
       try { localStorage.removeItem(KEY); } catch (e) { /* 何もしない */ }
-      state.entries = seedEntries(); state.chat = []; state.openDoc = null; save(); render();
+      state.entries = seedEntries(); state.chat = []; state.openDoc = null;
+      state.orders = seedOrders(); state.costumes = seedCostumes(); state.p3.drawer = null;
+      save(); render();
       toast("デモのデータを元に戻しました。");
     }
   };
+
+  Object.keys(p3Acts).forEach(function (k) { acts[k] = p3Acts[k]; });
 
   document.addEventListener("click", function (ev) {
     var el = ev.target.closest("[data-act]");
@@ -776,9 +1235,30 @@
   });
   document.addEventListener("change", function (ev) {
     var el = ev.target;
+    if (el.hasAttribute("data-draft")) {
+      var path = el.getAttribute("data-draft");
+      setDraft(path, el.value);
+      var dr = state.p3.drawer.draft;
+      if (path === "store" && staffOf(dr.store).indexOf(dr.staff) < 0) dr.staff = staffOf(dr.store)[0];
+      if (path === "biz") dr.costumes = dr.costumes.filter(function (c) { return catOf(c).biz.indexOf(dr.biz) >= 0; });
+      if (el.tagName === "SELECT" || path === "date") render();
+      return;
+    }
     if (!el.matches("select[data-act]")) return;
     var f = acts[el.getAttribute("data-act")];
     if (f) f(el, ev);
+  });
+  document.addEventListener("input", function (ev) {
+    var el = ev.target;
+    if (el.hasAttribute("data-draft") && el.tagName !== "SELECT") { setDraft(el.getAttribute("data-draft"), el.value); return; }
+    if (el.getAttribute("data-act") === "inv-q") {
+      state.p3.inv.q = el.value;
+      var box = document.getElementById("inv-list");
+      if (box) box.innerHTML = invListHtml();
+    }
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && state.p3.drawer) { state.p3.drawer = null; render(); }
   });
   document.addEventListener("submit", function (ev) {
     var form = ev.target, act = form.getAttribute("data-act");
