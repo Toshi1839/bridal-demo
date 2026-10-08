@@ -13,29 +13,30 @@
     { id: "accounting", label: "経理", desc: "現場が入力した数字の確認と確定" }
   ];
 
+  // 氏名は、提案書の画面（ログイン画面のデモ用アカウント）と同じサンプル。店舗は A〜C店に置き換えている
   var users = {
-    exec: { name: "山本 一郎", title: "取締役", email: "yamamoto@example.com", store: null },
-    manager: { name: "青木 真由美", title: "A店 店長", email: "aoki@example.com", store: "A" },
-    staff: { name: "井上 さくら", title: "A店", email: "inoue@example.com", store: "A" },
-    parttime: { name: "田中 優", title: "B店 アルバイト", email: "tanaka@example.com", store: "B" },
-    accounting: { name: "高橋 恵", title: "経理", email: "takahashi@example.com", store: null }
+    exec: { name: "石田 誠", title: "取締役 · 本社", email: "ishida@example.com", store: null },
+    manager: { name: "森本 彩", title: "店長 · A店", email: "morimoto@example.com", store: "A" },
+    staff: { name: "坂本 結衣", title: "衣装コーディネーター · A店", email: "sakamoto@example.com", store: "A" },
+    parttime: { name: "田中 優", title: "アルバイト · B店", email: "tanaka@example.com", store: "B" },
+    accounting: { name: "井上 陽翔", title: "経理 · 本社", email: "inoue@example.com", store: null }
   };
 
   // 画面ごとに使える役職。results は "full"＝全店・利益まで／"store"＝自分の店舗・売上と件数と固定費
   var access = {
     exec: { ai: true, docs: "edit", input: false, confirm: false, results: "full" },
     manager: { ai: true, docs: "view", input: true, confirm: false, results: "store" },
-    staff: { ai: true, docs: false, input: true, confirm: false, results: false },
-    parttime: { ai: true, docs: false, input: false, confirm: false, results: false },
-    accounting: { ai: true, docs: false, input: false, confirm: true, results: "full" }
+    staff: { ai: true, docs: "view", input: true, confirm: false, results: false },
+    parttime: { ai: true, docs: "view", input: false, confirm: false, results: false },
+    accounting: { ai: true, docs: "view", input: false, confirm: true, results: "full" }
   };
 
   var docs = [
-    { id: "rules", name: "就業規則", kind: "社内規程", version: "第3版", updated: "2026年4月1日", roles: ALL, status: "公開中" },
-    { id: "childcare", name: "育児・介護休業規程", kind: "社内規程", version: "—", updated: "—", roles: ALL, status: "未登録" },
-    { id: "m_rental", name: "衣装の貸出し・返却", kind: "業務マニュアル", version: "第1版", updated: "2026年9月1日", roles: ["exec", "manager", "staff", "parttime"], status: "公開中" },
-    { id: "m_discount", name: "値引きの承認", kind: "業務マニュアル", version: "第1版", updated: "2026年9月1日", roles: ["exec", "manager"], status: "公開中" },
-    { id: "m_input", name: "実績の入力", kind: "業務マニュアル", version: "第1版", updated: "2026年10月1日", roles: ["exec", "manager", "staff", "accounting"], status: "公開中" }
+    { id: "rules", name: "就業規則", kind: "社内規程", type: "PDF", version: "v3.0", updated: "2026/04/01", roles: ALL, status: "公開中" },
+    { id: "childcare", name: "育児・介護休業規程", kind: "社内規程", type: "PDF", version: "", updated: "", roles: ALL, status: "未登録" },
+    { id: "m_rental", name: "衣装の貸出し・返却", kind: "業務マニュアル", type: "DOCX", version: "v1.0", updated: "2026/09/01", roles: ["exec", "manager", "staff", "parttime"], status: "公開中" },
+    { id: "m_discount", name: "値引きの承認", kind: "業務マニュアル", type: "XLSX", version: "v1.0", updated: "2026/09/01", roles: ["exec", "manager"], status: "公開中" },
+    { id: "m_input", name: "実績の入力", kind: "業務マニュアル", type: "DOCX", version: "v1.0", updated: "2026/10/01", roles: ["exec", "manager", "staff", "accounting"], status: "公開中" }
   ];
 
   // 規程・マニュアルの条文。keys は質問の中に含まれていれば当てはまる語（長い語ほど強く効く）
@@ -153,8 +154,8 @@
   ];
 
   var staff = [
-    { name: "青木 真由美", store: "A" }, { name: "井上 さくら", store: "A" }, { name: "木村 遥", store: "A" },
-    { name: "小林 彩", store: "B" }, { name: "中村 由佳", store: "B" },
+    { name: "森本 彩", store: "A" }, { name: "坂本 結衣", store: "A" }, { name: "木村 遥", store: "A" },
+    { name: "小林 美穂", store: "B" }, { name: "中村 由佳", store: "B" },
     { name: "松本 愛", store: "C" }, { name: "森 千尋", store: "C" }
   ];
 
