@@ -435,12 +435,12 @@
     return '<div class="chat"><div class="card chat-card">' +
       '<div class="card-h"><h3>規程アシスタント</h3><span class="sub">社内文書のみをもとに回答</span></div>' +
       '<div class="msgs" id="msgs">' + msgs + "</div>" +
-      '<form class="ask" data-act="ask"><input type="text" name="q" placeholder="休暇・服装・経費などについて質問…" autocomplete="off" aria-label="質問">' +
+      '<form class="ask" data-act="ask"><input type="text" name="q" placeholder="休暇・経費・プランの中身などについて質問…" autocomplete="off" aria-label="質問">' +
       '<button class="btn pri" type="submit"' + (state.busy ? " disabled" : "") + ">質問する</button></form></div>" +
       '<div style="display:grid;gap:18px">' +
       '<div class="card"><div class="card-h"><h3>質問の例</h3></div><div class="card-b exs">' + exs + "</div></div>" +
       '<div class="card"><div class="card-h"><h3>' + esc(roleLabel(state.role)) + 'の方が参照できる文書</h3></div><div class="card-b scope-list"><ul>' + scope + "</ul></div></div>" +
-      '<div class="notice">デモ版：本番では AI（Azure OpenAI）が文章で答えます。このデモでは、サンプルの規程から当てはまる条文を探して表示します。</div>' +
+      '<div class="notice">デモ版：本番では AI（Azure OpenAI）が文章で答えます。このデモでは、登録した文書（サンプルの規程と、御社サイトから作ったプランのご案内）から当てはまる箇所を探して表示します。</div>' +
       "</div></div>";
   }
   function ask(q) {
@@ -475,7 +475,7 @@
       if (state.openDoc === d.id && can && reg) {
         open = '<div class="doc-open">' + D.articles.filter(function (a) { return a.doc === d.id; }).map(function (a) {
           return "<p><b>" + esc(a.no) + "（" + esc(a.title) + "）</b>　" + esc(a.text) + "</p>";
-        }).join("") + "<p>（サンプルの抜粋です）</p></div>";
+        }).join("") + "<p>" + esc(d.src || "（サンプルの抜粋です）") + "</p></div>";
       }
       return '<div class="doc"><span class="ico">' + esc(d.type) + '</span><div><div class="t">' + esc(d.name) + '</div><div class="m">' + meta + "</div></div>" +
         '<span class="sp"></span><span class="scope">閲覧範囲：' + esc(scopeLabel(d)) + "</span>" + btn + open + "</div>";
@@ -989,9 +989,15 @@
       nextCard = '<div class="notice">この受注は完了しています（ご返却・残金の入金まで確認済み）。</div>';
     }
     var tiles = '<div class="itiles">' + itile("お日取り", o.dateTbd ? (/ブライダルフェア/.test(o.source) ? "未定（式場のご成約で決まります）" : "未定（ご来店の際に伺います）") : oDate(o)) + itile("会場・用途", o.venue || "—") + itile("式の形態", o.style || "—") +
-      itile("成約日", o.contractDate ? slashDate(o.contractDate) : "まだご成約前です") + itile("受注金額", amt(o.amount)) + itile("入金済み", yen(o.paid || 0)) +
-      itile("残金", o.amount ? yen(o.amount - (o.paid || 0)) : "—") + itile("経路", o.source || "—") + itile("担当", o.staff) + "</div>" +
+      itile("成約日", o.contractDate ? slashDate(o.contractDate) : "まだご成約前です") + itile("受注金額（税別）", amt(o.amount)) + itile("入金済み（税別）", yen(o.paid || 0)) +
+      itile("残金（税別）", o.amount ? yen(o.amount - (o.paid || 0)) : "—") + itile("経路", o.source || "—") + itile("担当", o.staff) + "</div>" +
       (o.plan ? '<div class="plan-line">' + icon("spark") + "<span><b>プラン・キャンペーン</b>" + esc(o.plan) + "</span></div>" : "");
+    var pi = planInfoOf(o.plan);
+    var planCard = !pi ? "" : '<div class="card"><div class="card-h"><h3>プランの中身</h3><span class="sub">' + esc(pi.name + " · " + pi.price) + '</span><span class="sp"></span>' +
+      '<a class="extlink" href="' + esc(pi.url) + '" target="_blank" rel="noopener noreferrer">掲載ページ' + icon("ext") + "</a></div>" +
+      '<div class="card-b stack">' + (pi.lead ? '<p class="note-sm">' + esc(pi.lead) + "</p>" : "") + '<div class="pcols"><div><h4>含まれるもの</h4>' + planList(pi.inc, "ok") + "</div>" +
+      "<div><h4>含まれないもの</h4>" + planList(pi.exc, "no") + (pi.opt.length ? "<h4>追加できるもの</h4>" + planList(pi.opt, "add") : "") + "</div></div>" +
+      '<p class="note-sm">御社サイトの掲載内容（2026年10月8日に確認）。お客様へのご説明と、お見積りの「プランの分」と「追加の分」を分けるときに使います。</p></div></div>';
     var total = cs.reduce(function (s, c) { return s + c.price; }, 0);
     var cosCard = '<div class="card"><div class="card-h"><h3>在庫から選んだ衣装</h3><span class="sub">' + cs.length + " 点 · " + yen(total) + "</span></div><div class=\"card-b\">" +
       (cs.length ? '<div class="cgrid">' + cs.map(function (c) {
@@ -1035,8 +1041,11 @@
     var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(o.no + " · " + storeName(o.store) + " · 担当: " + o.staff) + "</div><h2>" + esc(o.customer) + '</h2><div class="dh-tags">' +
       bizTag(o.biz) + stagePill(o.stage) + '<span class="tag plain">' + esc(o.source) + "</span></div></div>" +
       '<div class="dh-acts">' + (edit ? '<button class="btn" data-act="order-edit" data-no="' + o.no + '">' + icon("edit") + "編集</button>" : "") + '<button class="btn" data-act="drawer-close">閉じる</button></div></div>';
-    return head + '<div class="drawer-b"><div class="card"><div class="stepper">' + steps + '</div><p class="stage-help">' + icon("spark") + esc((P.stageHelp || {})[o.stage] || "") + "</p></div>" + nextCard + tiles + apCard + cosCard + reqCard + invCard + exCard + hist + "</div>";
+    return head + '<div class="drawer-b"><div class="card"><div class="stepper">' + steps + '</div><p class="stage-help">' + icon("spark") + esc((P.stageHelp || {})[o.stage] || "") + "</p></div>" + nextCard + tiles + planCard + apCard + cosCard + reqCard + invCard + exCard + hist + "</div>";
   }
+  // 受注のプラン名から、公開されているプランの中身を引く（data.js の plansInfo。規程アシスタントと同じデータ）
+  function planInfoOf(name) { var l = D.plansInfo || []; for (var i = 0; i < l.length; i++) if (String(name || "").indexOf(l[i].name) >= 0) return l[i]; return null; }
+  function planList(items, cls) { return '<ul class="pl ' + cls + '">' + items.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>"; }
   function itile(k, v) { return '<div class="itile"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
 
   // ---------- 受注の登録・編集（4つの手順） ----------
@@ -1593,12 +1602,28 @@
   setInterval(liveTick, 40000);
 
   // ---------- フェア・お食事 ----------
+  // 時間枠に入っている方。このデモで入った予約は「予約の受付」を開ける。見本の数の分は、名前と経路も見本
+  function slotGuests(kind, vid, id, date, t, cap) {
+    var key = slotKey(kind, vid, id, date, t), d = toDate(date), busy = d.getDay() === 0 || d.getDay() === 6 || !!holi(date);
+    var out = ((state.ext.fairBook || {})[key] || []).map(itemOf).filter(Boolean).map(function (x) { return { name: x.name, people: x.people, via: x.via === "Web" ? "式場のサイト" : x.via, id: x.id }; });
+    var h = 11; for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+    var r = rng(h), n = slotSeed(key, cap, busy);
+    for (var k = 0; k < n && out.length < cap; k++) {
+      var q = r();
+      out.push({ name: pick(D.familyNames, r) + " " + pick(D.givenNames, r), people: kind === "meal" ? 6 + Math.floor(r() * 12) : r() < 0.8 ? 2 : 3, via: q < 0.65 ? "式場のサイト" : q < 0.88 ? "お電話" : "ご来館" });
+    }
+    return out;
+  }
   function slotRows(kind, v, item, date, mins, cap, edit) {
-    var now = pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
+    var now = pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()), canOpen = allowed("inbox");
     return item.slots.map(function (t) {
       var n = slotCount(kind, v.id, item.id, date, t, cap), s = slotState(n, cap), past = date === TODAY_S && t <= now;
-      return '<div class="slotrow ' + s[2] + '"><span class="tr">' + t + "〜" + endTime(t, mins) + '</span><span class="ss ' + s[2] + '"><i>' + s[0] + "</i>" + s[1] + '</span><span class="bk">予約 ' + n + " / " + cap + "組</span>" +
-        (edit && s[2] !== "full" && !past ? '<button class="btn sm pri" data-act="book-open" data-k="' + kind + '" data-v="' + v.id + '" data-f="' + item.id + '" data-d="' + date + '" data-t="' + t + '">予約する</button>'
+      var who = slotGuests(kind, v.id, item.id, date, t, cap).map(function (g) {
+        var tx = esc(g.name) + " 様<small>" + g.people + "名 · " + esc(g.via) + "</small>";
+        return g.id && canOpen ? '<button type="button" class="gst" data-act="inbox-open" data-id="' + g.id + '">' + tx + "</button>" : '<span class="gst">' + tx + "</span>";
+      }).join("");
+      return '<div class="slotrow ' + s[2] + '"><span class="tr">' + t + "〜" + endTime(t, mins) + '</span><span class="ss ' + s[2] + '"><i>' + s[0] + "</i>" + s[1] + '</span><span class="bk"><span class="bkn">予約 ' + n + " / " + cap + "組</span>" + who + "</span>" +
+        (edit && s[2] !== "full" && !past ? '<button class="btn sm" data-act="book-open" data-k="' + kind + '" data-v="' + v.id + '" data-f="' + item.id + '" data-d="' + date + '" data-t="' + t + '">' + icon("phone") + "電話・来館の予約を入れる</button>"
           : '<span class="btn sm dis">' + (past ? "受付終了" : s[2] === "full" ? "満席" : "閲覧のみ") + "</span>") + "</div>";
     }).join("");
   }
@@ -1635,18 +1660,20 @@
       return '<button type="button" class="ds' + (s === sel ? " on" : "") + (closed ? " closed" : "") + (holi(s) ? " hol" : "") + (d.getDay() === 0 ? " sun" : d.getDay() === 6 ? " sat" : "") + '" data-act="fair-date" data-d="' + s + '"' + (closed ? " disabled" : "") + ">" +
         '<span class="m">' + (d.getMonth() + 1) + "/" + d.getDate() + '</span><span class="w">' + WD.charAt(d.getDay()) + (holi(s) ? "・祝" : "") + '</span><span class="n">' + (closed ? "定休" : tab === "fair" ? (n ? n + "件" : "—") : "○") + "</span></button>";
     }).join("") + "</div>";
+    var how = '<p class="fair-how">' + icon("inbox") + "<span>" + (tab === "fair" ? "お客様のご予約は、式場のフェア予約ページから「予約の受付」に届きます。" : "") +
+      (canEdit("fairs") ? "この画面では空きと来場予定の方を確かめ、お電話・ご来館で受けた" + (tab === "fair" ? "" : "お食事の") + "予約を入れます。" : "この画面では空きと来場予定の方を確かめます。") + "</span></p>";
     var body = tab === "fair" ? vs.filter(function (x) { return x.date === sel; }).map(function (x) { return fairCard(x.v, x.f, x.date); }).join("") || '<div class="notice">この日のフェアはありません。</div>'
       : X.meals.filter(function (m) { return m.venue === v.id; }).map(function (m) { return mealCard(v, m, sel); }).join("") || '<div class="notice">この会場のお食事の例はありません。</div>';
     return scopeNote("adv", "フェアの名前・中身・写真は、式場のサイトとフェアの予約ページから。日付・空席・予約の数はサンプルです。お食事のご予約は例として示しています（今お使いの受付にあるかは、打合せで伺います）。") +
-      kpis + '<div class="card fair-wrap">' + vtabs + info + '<div class="fair-bar">' + seg + '<span class="sp"></span><span class="note-sm">' + esc(mdw(sel)) + (holi(sel) ? "（" + esc(holi(sel)) + "）" : "") + "</span></div>" + strip + "</div>" + '<div class="fairs">' + body + "</div>";
+      kpis + '<div class="card fair-wrap">' + vtabs + info + '<div class="fair-bar">' + seg + '<span class="sp"></span><span class="note-sm">' + esc(mdw(sel)) + (holi(sel) ? "（" + esc(holi(sel)) + "）" : "") + "</span></div>" + strip + how + "</div>" + '<div class="fairs">' + body + "</div>";
   }
   function bkField(label, key, val, ph, req) { return '<div class="field"><label>' + esc(label) + (req ? '<span class="req">必須</span>' : "") + '</label><input type="text" data-bk="' + key + '" value="' + esc(val || "") + '" placeholder="' + esc(ph || "") + '"></div>'; }
   function bookDrawer(d) {
     var dr = d.draft, v = venueOf(dr.venue), it = dr.kind === "fair" ? fairOf(dr.venue, dr.item) : mealOf(dr.item);
-    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc((dr.kind === "fair" ? "ブライダルフェア予約" : "お食事のご予約（例）") + " · " + v.short) + "</div><h2>" + esc(it.title) + "</h2>" +
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc((dr.kind === "fair" ? "ブライダルフェア" : "お食事のご予約（例）") + " · " + v.short + " · お電話・ご来館で受けた予約を入れる") + "</div><h2>" + esc(it.title) + "</h2>" +
       '<div class="dh-tags"><span class="tag gold ict">' + icon("cal") + esc(mdw(dr.date) + " " + dr.t + "〜" + endTime(dr.t, 120)) + "</span>" + (dr.kind === "fair" ? '<span class="tag plain">120分 · 無料</span>' : "") + "</div></div>" +
       '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
-    var via = ["お電話", "ご来館", "LINE"].map(function (x) { return '<button type="button" class="chip' + (dr.via === x ? " on" : "") + '" data-act="bk-via" data-v="' + x + '">' + x + "</button>"; }).join("");
+    var via = ["お電話", "ご来館"].map(function (x) { return '<button type="button" class="chip' + (dr.via === x ? " on" : "") + '" data-act="bk-via" data-v="' + x + '">' + x + "</button>"; }).join("");
     var form = '<div class="card"><div class="card-b stack"><div class="form-grid">' +
       bkField("お名前", "name", dr.name, "例：三浦 遥", true) + bkField("ふりがな", "kana", dr.kana, "例：みうら はるか") + bkField("電話番号", "tel", dr.tel, "例：090-0000-0000", true) + bkField("メールアドレス", "mail", dr.mail, "例：name@example.com") +
       '<div class="field"><label>人数</label><select data-bk="people">' + [1, 2, 3, 4, 6, 8, 10, 12].map(function (n) { return '<option value="' + n + '"' + (+dr.people === n ? " selected" : "") + ">" + n + "名</option>"; }).join("") + "</select></div>" +
@@ -1748,7 +1775,7 @@
       var staffN = X.employees.filter(function (e) { return e.store === s.id; }).length, off = state.ext.leave.filter(function (l) { var e = empOf(l.name); return e && e.store === s.id && l.date === TODAY_S && l.st === "承認済"; }).length;
       return '<a class="site" href="#/calendar" data-act="site-go" data-s="' + s.id + '"><div class="site-h"><span class="site-ic">' + icon("hanger") + "</span><b>" + esc(s.name) + '</b><span class="site-st ' + (closed ? "off" : "on") + '">' + (closed ? "定休日" : "営業中") + "</span></div>" +
         '<div class="site-n"><span><b>' + (closed ? "—" : tdy) + "</b>本日のご来店</span><span><b" + (nw ? ' class="dn"' : "") + ">" + nw + "</b>新着のご予約</span><span><b>" + (closed ? "—" : staffN - off) + "</b>出勤</span></div>" +
-        '<div class="site-f"><span>今期 ' + mil(ytd.sales) + '</span><span class="' + upDn(r) + '">' + arrow(r) + "前年比 " + pct(r) + "</span></div></a>";
+        '<div class="site-f"><span>今期（施行） ' + mil(ytd.sales) + '</span><span class="' + upDn(r) + '">' + arrow(r) + "前年比 " + pct(r) + "</span></div></a>";
     });
     X.fairVenues.forEach(function (v) {
       var closed = venueClosedOn(TODAY), today = fairSchedule().filter(function (x) { return x.v.id === v.id && x.date === TODAY_S; }), wk = fairSchedule().filter(function (x) { return x.v.id === v.id && x.i < 7; }), bk = 0;
@@ -2334,7 +2361,7 @@
     if (a.results) {
       var st = a.results === "full" ? "all" : u.store;
       var ytd = sumRange("sekou", FY_START_S, YEST_S, st), ly = sumRange("sekou", ymd(addYears(FY_START, -1)), ymd(addYears(YEST, -1)), st);
-      stats.push(["今期の売上" + (st === "all" ? "" : "（" + storeName(st) + "）"), mil(ytd.sales), arrow(ratio(ytd.sales, ly.sales)) + "前年比 " + pct(ratio(ytd.sales, ly.sales))]);
+      stats.push(["今期の売上（" + (st === "all" ? "" : storeName(st) + "・") + "施行）", mil(ytd.sales), arrow(ratio(ytd.sales, ly.sales)) + "前年比 " + pct(ratio(ytd.sales, ly.sales))]);
     } else {
       var me = empOf(u.name);
       if (me) stats.push(["有給の残り", me.leave.toFixed(1) + "日", "今年度 " + me.taken + "日取得"]);
@@ -2344,7 +2371,7 @@
       '<div class="hero-t"><span class="script sm">Yashiro</span><span class="hero-date">' + esc(TODAY.getFullYear() + "年" + (TODAY.getMonth() + 1) + "月" + TODAY.getDate() + "日（" + WD.charAt(TODAY.getDay()) + "）" + (holi(TODAY_S) ? " " + holi(TODAY_S) : "")) + "</span>" +
       "<h2>" + greeting() + "、" + esc(family(u.name)) + "さん</h2><p>" + esc(roleLabel(state.role)) + (u.store ? "（" + esc(storeName(u.store)) + "）" : "") + "としてログインしています · 見られる画面と数字は、役職によって変わります</p></div>" +
       '<div class="hero-s">' + stats.map(function (s) { return '<div class="stat"><span class="l">' + esc(s[0]) + '</span><span class="v">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + "</span></div>"; }).join("") + "</div>" + newsStrip(true) + "</section>";
-    var live = exec ? '<div class="sec-h center">' + hpair("いまの会社", "Live", "h3") + '<span class="sub"><span class="live-dot"></span>4店舗と2つの式場の、いまの様子です。予約が入ると、そのまま流れてきます（数字はサンプル）。</span></div>' +
+    var live = exec ? '<div class="sec-h center">' + hpair("いまの会社", "Live", "h3") + '<span class="sub"><span class="live-dot"></span>4店舗と2つの式場の、いまの様子です。予約が入ると、そのまま流れてきます。売上は施行ベースで、4月1日から昨日まで（今朝6:00の集計・数字はサンプル）。</span></div>' +
       siteTiles() + '<div class="row g2e">' + liveCard() + '<div class="stack">' + digestCard() + fairFunnelCard() + "</div></div>" : "";
     var row1 = [];
     if (allowed("inbox") && !exec) row1.push(inboxCard());
