@@ -1,5 +1,6 @@
-/* 社内規程AI・実績管理（デモ）— サンプルデータ
-   規程・氏名・店舗・数字はすべて架空のサンプルです。実在の会社・人物とは関係ありません。 */
+/* マリエ・やしろ 業務ポータル（デモ）— データ
+   店舗の名前・住所・電話・営業時間は、御社サイト（yashiro-dress.com）の公開情報。
+   規程・氏名・数字はすべてサンプルで、実在の方とは関係ありません。 */
 (function () {
   "use strict";
 
@@ -13,12 +14,12 @@
     { id: "accounting", label: "経理", desc: "現場が入力した数字の確認と確定" }
   ];
 
-  // 氏名は、提案書の画面（ログイン画面のデモ用アカウント）と同じサンプル。店舗は A〜C店に置き換えている
+  // 氏名は、提案書の画面（ログイン画面のデモ用アカウント）と同じサンプル。店舗は御社の4店舗
   var users = {
     exec: { name: "石田 誠", title: "取締役 · 本社", email: "ishida@example.com", store: null },
-    manager: { name: "森本 彩", title: "店長 · A店", email: "morimoto@example.com", store: "A" },
-    staff: { name: "坂本 結衣", title: "衣装コーディネーター · A店", email: "sakamoto@example.com", store: "A" },
-    parttime: { name: "田中 優", title: "アルバイト · B店", email: "tanaka@example.com", store: "B" },
+    manager: { name: "森本 彩", title: "店長 · 松江本店", email: "morimoto@example.com", store: "matsue" },
+    staff: { name: "坂本 結衣", title: "衣装コーディネーター · 松江本店", email: "sakamoto@example.com", store: "matsue" },
+    parttime: { name: "田中 優", title: "アルバイト · 出雲店", email: "tanaka@example.com", store: "izumo" },
     accounting: { name: "井上 陽翔", title: "経理 · 本社", email: "inoue@example.com", store: null }
   };
 
@@ -49,8 +50,8 @@
     },
     {
       doc: "rules", no: "第8条", title: "休日",
-      text: "休日は、店舗の定休日のほか、シフトにより週1日を定める。土曜日・日曜日・祝日は原則として勤務日とし、休日は前月20日までにシフト表で知らせる。",
-      answer: "休日は、店舗の定休日と、シフトで決める週1日です。土日祝は原則として勤務日で、休日は前月20日までにシフト表でお知らせします。",
+      text: "休日は、店舗の定休日（毎週火曜日。祝日は営業）のほか、シフトにより週1日を定める。土曜日・日曜日・祝日は原則として勤務日とし、休日は前月20日までにシフト表で知らせる。",
+      answer: "休日は、店舗の定休日（毎週火曜日。祝日は営業）と、シフトで決める週1日です。土日祝は原則として勤務日で、休日は前月20日までにシフト表でお知らせします。",
       keys: ["休日", "休み", "定休", "週休", "土日", "祝日", "シフト表", "連休"]
     },
     {
@@ -122,6 +123,12 @@
       keys: ["貸出", "貸し出", "返却", "お渡し", "貸出票", "衣装を渡", "クリーニング"]
     },
     {
+      doc: "m_rental", no: "手順3", title: "挙式会場へのお届け",
+      text: "お選びいただいた衣装・小物は、挙式の前日までに担当者が責任を持って挙式会場へお届けする。お届けの前に、貸出票と衣装・小物の数を照らし合わせる。",
+      answer: "衣装と小物は、挙式の前日までに、担当者が挙式会場へお届けします。お届けの前に、貸出票と衣装・小物の数を照らし合わせてください。",
+      keys: ["お届け", "届け", "配送", "会場へ", "前日", "搬入", "納品"]
+    },
+    {
       doc: "m_discount", no: "手順1", title: "値引きの承認",
       text: "定価の10%を超える値引きをするときは、店長の承認を得る。定価の20%を超える値引きをするときは、役員の承認を得る。",
       answer: "定価の10%を超える値引きは店長の承認、20%を超える値引きは役員の承認が必要です。",
@@ -136,6 +143,7 @@
   ];
 
   var suggestions = [
+    "衣装は会場へいつ届けますか",
     "有給休暇は何日もらえますか",
     "遅刻しそうなときの連絡は？",
     "身内に不幸があったときの休みは？",
@@ -146,24 +154,33 @@
     "車で通勤してもよいですか"
   ];
 
-  // 第1段階の対象＝1つの業態（ここでは衣装）。店舗・担当者はサンプル
+  // 第1段階の対象＝1つの業態（ここでは衣装）。店舗は御社の4店舗（名前・住所・電話・営業時間は御社サイトから）。
+  // base（月の成約件数）・家賃・光熱費・人件費は、すべてサンプル
   var stores = [
-    { id: "A", name: "A店", base: 30, growth: [0.96, 1.0, 1.04], rent: 850000, utility: 120000, labor: 2000000 },
-    { id: "B", name: "B店", base: 22, growth: [0.95, 1.0, 1.08], rent: 620000, utility: 95000, labor: 1500000 },
-    { id: "C", name: "C店", base: 16, growth: [0.98, 1.0, 0.96], rent: 480000, utility: 80000, labor: 1150000 }
+    { id: "matsue", name: "松江本店", base: 30, growth: [0.96, 1.0, 1.04], rent: 850000, utility: 140000, labor: 2100000,
+      addr: "〒690-0001 島根県松江市東朝日町150-26", tel: "0852-24-4528", note: "成人式の当日は、くにびきメッセで着付け・ヘアメイク・当日撮影" },
+    { id: "izumo", name: "出雲店", base: 22, growth: [0.95, 1.0, 1.08], rent: 620000, utility: 100000, labor: 1500000,
+      addr: "〒693-0066 島根県出雲市高岡町7-1", tel: "0853-23-1713", note: "ヴィラ・ノッツェ コルティーレ出雲のフェアから、ドレスのご試着へ" },
+    { id: "yonago", name: "米子店", base: 19, growth: [0.97, 1.0, 1.03], rent: 560000, utility: 95000, labor: 1350000,
+      addr: "〒683-0802 鳥取県米子市東福原四丁目22-1", tel: "0859-35-9233", note: "スタジオ・着付け・ヘアメイクの美容院をご紹介" },
+    { id: "tottori", name: "鳥取店", base: 14, growth: [0.98, 1.0, 0.96], rent: 480000, utility: 80000, labor: 1100000,
+      addr: "〒680-0903 鳥取県鳥取市南隅501", tel: "0857-28-0022", note: "成人式の当日は、店舗で着付け・ヘアセット・当日写し（先着順）" }
   ];
+  var storeHours = "10:00〜18:00", storeClosed = "毎週火曜日（祝日は営業）";
 
   var staff = [
-    { name: "森本 彩", store: "A" }, { name: "坂本 結衣", store: "A" }, { name: "木村 遥", store: "A" },
-    { name: "小林 美穂", store: "B" }, { name: "中村 由佳", store: "B" },
-    { name: "松本 愛", store: "C" }, { name: "森 千尋", store: "C" }
+    { name: "森本 彩", store: "matsue" }, { name: "坂本 結衣", store: "matsue" }, { name: "木村 遥", store: "matsue" },
+    { name: "小林 美穂", store: "izumo" }, { name: "中村 由佳", store: "izumo" },
+    { name: "松本 愛", store: "yonago" }, { name: "森 千尋", store: "yonago" },
+    { name: "前田 真由", store: "tottori" }, { name: "西田 奈央", store: "tottori" }
   ];
 
   var products = [
-    { name: "ウェディングドレス", min: 260000, max: 360000, w: 35 },
-    { name: "カラードレス", min: 180000, max: 250000, w: 25 },
-    { name: "タキシード", min: 70000, max: 110000, w: 20 },
+    { name: "ウェディングドレス", min: 260000, max: 360000, w: 30 },
+    { name: "カラードレス", min: 180000, max: 250000, w: 20 },
+    { name: "タキシード", min: 70000, max: 110000, w: 15 },
     { name: "白無垢・色打掛", min: 300000, max: 400000, w: 10 },
+    { name: "振袖（成人式）", min: 150000, max: 280000, w: 15 },
     { name: "小物セット", min: 30000, max: 60000, w: 10 }
   ];
 
@@ -175,7 +192,7 @@
 
   window.DEMO_DATA = {
     roles: roles, users: users, access: access, docs: docs, articles: articles, suggestions: suggestions,
-    stores: stores, staff: staff, products: products, season: season,
+    stores: stores, storeHours: storeHours, storeClosed: storeClosed, staff: staff, products: products, season: season,
     familyNames: familyNames, givenNames: givenNames
   };
 })();

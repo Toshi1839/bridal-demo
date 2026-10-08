@@ -1,13 +1,14 @@
-/* 社内規程AI・実績管理（デモ）— 画面の動き
-   データは data.js（すべてサンプル）。本物の AI にはつないでいない：質問はサンプルの条文から当てはまるものを探して表示する。
-   画面の作りは、提案書（TEJDOC-2026-002）に貼った画面イメージに合わせている。 */
+/* マリエ・やしろ 業務ポータル（デモ）— 画面の動き
+   データは data.js・data-p3.js・data-ext.js。店舗・式場・フェア・衣装・体験レポートの名前と写真は、御社と式場のサイトの公開情報。氏名・数字・規程はサンプル。
+   本物の AI にはつないでいない：質問はサンプルの条文から当てはまるものを探して表示する。
+   見た目は御社サイト（yashiro-dress.com）に寄せている（明朝の見出し・広い字間・金の丸ボタン・右端の縦のつまみ）。 */
 (function () {
   "use strict";
 
   var D = window.DEMO_DATA;
   var app = document.getElementById("app");
   var toastEl = document.getElementById("toast");
-  var KEY = "bridal-demo-v2";
+  var KEY = "bridal-demo-v3"; // v2（A〜C店の版）の保存は読まない
 
   // ---------- 小道具 ----------
   function esc(s) {
@@ -80,7 +81,19 @@
     undo: '<path d="M9 8H4V3"/><path d="M4.6 8A8 8 0 1 1 4 13"/>',
     send: '<path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>',
     download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 20h16"/>',
-    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/>'
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/>',
+    inbox: '<path d="M3 13l2.5-7h13L21 13v6H3z"/><path d="M3 13h5l1.5 2.5h5L16 13h5"/>',
+    ring: '<circle cx="12" cy="14.5" r="5.5"/><path d="M9.5 4.5h5L13 8h-2z"/>',
+    hanger: '<path d="M12 8.5V8c0-1.2 2-1.7 2-3a2 2 0 1 0-4 0"/><path d="M12 8.5 3 16h18z"/>',
+    ext: '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5H5V6h5"/>',
+    arrow: '<circle cx="12" cy="12" r="9"/><path d="M10.5 8.5 14 12l-3.5 3.5"/>',
+    phone: '<path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/>',
+    meal: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-2 2-2.5 5-2.5 7.5H17V21"/>',
+    heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    live: '<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',
+    pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+    quote: '<path d="M9.5 7H6a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1.5v3l3-3V9a2 2 0 0 0-1-2zM19.5 7H16a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1.5v3l3-3V9a2 2 0 0 0-1-2z"/>',
+    share: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4M8.2 13.2l7.6 4"/>'
   };
   function icon(n) { return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + "</svg>"; }
 
@@ -108,10 +121,10 @@
     function d(n) { return ymd(addDays(TODAY, n)); }
     function t(n, h, m) { var x = addDays(TODAY, n); x.setHours(h, m, 0, 0); return x.toISOString(); }
     return [
-      { id: "e1", created: t(-1, 18, 20), store: "A", kind: "seiyaku", contract: d(-1), event: d(200), product: "ウェディングドレス", amount: 328000, customer: "石川 結衣", staff: "坂本 結衣", status: "pending" },
-      { id: "e2", created: t(-1, 19, 5), store: "A", kind: "sekou", contract: d(-150), event: d(-1), product: "カラードレス", amount: 214000, customer: "大野 彩花", staff: "木村 遥", status: "pending" },
-      { id: "e3", created: t(-1, 17, 42), store: "B", kind: "seiyaku", contract: d(-1), event: d(240), product: "白無垢・色打掛", amount: 396000, customer: "岡本 真央", staff: "小林 美穂", status: "pending" },
-      { id: "e4", created: t(0, 10, 15), store: "C", kind: "seiyaku", contract: d(0), event: d(180), product: "タキシード", amount: 98000, customer: "村上 優花", staff: "松本 愛", status: "pending" }
+      { id: "e1", created: t(-1, 18, 20), store: "matsue", kind: "seiyaku", contract: d(-1), event: d(200), product: "ウェディングドレス", amount: 328000, customer: "石川 結衣", staff: "坂本 結衣", status: "pending" },
+      { id: "e2", created: t(-1, 19, 5), store: "matsue", kind: "sekou", contract: d(-150), event: d(-1), product: "カラードレス", amount: 214000, customer: "大野 彩花", staff: "木村 遥", status: "pending" },
+      { id: "e3", created: t(-1, 17, 42), store: "izumo", kind: "seiyaku", contract: d(-1), event: d(240), product: "白無垢・色打掛", amount: 396000, customer: "岡本 真央", staff: "小林 美穂", status: "pending" },
+      { id: "e4", created: t(0, 10, 15), store: "tottori", kind: "seiyaku", contract: d(0), event: d(180), product: "タキシード", amount: 98000, customer: "村上 優花", staff: "前田 真由", status: "pending" }
     ];
   }
 
@@ -219,22 +232,25 @@
   // ---------- 画面の一覧 ----------
   // ph＝提案書のどこに当たるか。p1＝第1段階／p2＝第2段階／p12＝第1・第2段階／opt＝第3段階（オプション）／adv＝発展機能（提案書の外）
   var NAV = [
-    { id: "home", grp: "概要", label: "ホーム", ico: "home" },
-    { id: "ai", grp: "ナレッジ", label: "規程アシスタント", ico: "chat", ph: "p1" },
-    { id: "docs", grp: "ナレッジ", label: "社内規程", ico: "book", ph: "p1" },
-    { id: "results", grp: "実績", label: "実績の表示", ico: "chart", ph: "p1" },
-    { id: "input", grp: "実績", label: "実績の入力", ico: "edit", ph: "p1" },
-    { id: "confirm", grp: "実績", label: "実績の確定", ico: "check", ph: "p1" },
-    { id: "orders", grp: "営業・顧客管理", label: "受注管理", ico: "list", ph: "opt" },
-    { id: "customers", grp: "営業・顧客管理", label: "顧客", ico: "users", ph: "opt" },
-    { id: "calendar", grp: "営業・顧客管理", label: "来店予約", ico: "cal", ph: "opt" },
-    { id: "inventory", grp: "在庫管理", label: "衣装在庫", ico: "box", ph: "opt" },
-    { id: "invoices", grp: "会計・経理", label: "請求・入金", ico: "receipt", ph: "opt" },
-    { id: "expenses", grp: "会計・経理", label: "経費", ico: "wallet", ph: "opt" },
-    { id: "tkc", grp: "会計・経理", label: "TKC連携", ico: "link", ph: "p2" },
-    { id: "employees", grp: "人事", label: "従業員", ico: "id", ph: "adv" },
-    { id: "leave", grp: "人事", label: "休暇", ico: "leave", ph: "adv" },
-    { id: "users", grp: "管理", label: "ユーザー・権限", ico: "shield", ph: "p12" }
+    { id: "home", grp: "概要", label: "ホーム", en: "Home", ico: "home" },
+    { id: "ai", grp: "ナレッジ", label: "規程アシスタント", en: "Assistant", ico: "chat", ph: "p1" },
+    { id: "docs", grp: "ナレッジ", label: "社内規程", en: "Documents", ico: "book", ph: "p1" },
+    { id: "voice", grp: "ナレッジ", label: "お客様の声", en: "Voice", ico: "quote", ph: "adv" },
+    { id: "results", grp: "実績", label: "実績の表示", en: "Results", ico: "chart", ph: "p1" },
+    { id: "input", grp: "実績", label: "実績の入力", en: "Input", ico: "edit", ph: "p1" },
+    { id: "confirm", grp: "実績", label: "実績の確定", en: "Approval", ico: "check", ph: "p1" },
+    { id: "inbox", grp: "ご予約", label: "予約の受付", en: "Reservation", ico: "inbox", ph: "adv" },
+    { id: "calendar", grp: "ご予約", label: "来店予約", en: "Schedule", ico: "cal", ph: "opt" },
+    { id: "fairs", grp: "ご予約", label: "フェア・お食事", en: "Bridal Fair", ico: "ring", ph: "adv" },
+    { id: "customers", grp: "顧客・受注", label: "顧客", en: "Customers", ico: "users", ph: "opt" },
+    { id: "orders", grp: "顧客・受注", label: "受注管理", en: "Orders", ico: "list", ph: "opt" },
+    { id: "inventory", grp: "顧客・受注", label: "衣装在庫", en: "Costume", ico: "hanger", ph: "opt" },
+    { id: "invoices", grp: "会計・経理", label: "請求・入金", en: "Invoice", ico: "receipt", ph: "opt" },
+    { id: "expenses", grp: "会計・経理", label: "経費", en: "Expense", ico: "wallet", ph: "opt" },
+    { id: "tkc", grp: "会計・経理", label: "TKC連携", en: "TKC", ico: "link", ph: "p2" },
+    { id: "employees", grp: "人事", label: "従業員", en: "Staff", ico: "id", ph: "adv" },
+    { id: "leave", grp: "人事", label: "休暇", en: "Leave", ico: "leave", ph: "adv" },
+    { id: "users", grp: "管理", label: "ユーザー・権限", en: "Users", ico: "shield", ph: "p12" }
   ];
   function navOf(id) { for (var i = 0; i < NAV.length; i++) if (NAV[i].id === id) return NAV[i]; return NAV[0]; }
   function route() { var h = location.hash.replace(/^#\/?/, ""); return h || "home"; }
@@ -244,22 +260,27 @@
 
   // ---------- ログイン ----------
   function brandBlock(cls, sub) {
-    return '<div class="' + cls + '"><span class="mark">業</span><span><b>業務ポータル</b><small>' + (sub || "社内規程AI・実績管理　デモ版") + "</small></span></div>";
+    return '<div class="' + cls + '"><span class="bscript">Yashiro</span><span class="btxt"><b>MARIE YASHIRO</b><small>' + esc(sub || "業務ポータル · デモ版") + "</small></span></div>";
+  }
+  function hpair(ja, en, tag) { return '<div class="hpair"><' + (tag || "h2") + ">" + esc(ja) + "</" + (tag || "h2") + '><span class="en">' + esc(en) + "</span></div>"; }
+  // 右下の白い帯（御社サイトのトップと同じ形）：次のフェア
+  function newsStrip(asLink) {
+    var f = fairSchedule().filter(function (x) { return x.date >= TODAY_S; })[0];
+    if (!f) return "";
+    var inner = '<span class="nd">' + esc(f.date.replace(/-/g, " / ")) + '</span><span class="ntag">' + esc(f.v.short) + '</span><span class="nt">' + esc(f.f.title) + "</span>" + icon("arrow");
+    return asLink ? '<a class="nstrip" href="#/fairs" data-act="fair-jump" data-v="' + f.v.id + '" data-d="' + f.date + '">' + inner + "</a>" : '<div class="nstrip">' + inner + "</div>";
   }
   function loginArt() {
-    var ytd = sumRange("sekou", FY_START_S, YEST_S, "all"), ly = sumRange("sekou", ymd(addYears(FY_START, -1)), ymd(addYears(YEST, -1)), "all");
-    var yoy = ratio(ytd.sales, ly.sales), closed = TODAY.getDay() === 2;
-    var tdy = X.appts.filter(function (a) { return a.d === 0; }).length;
-    return '<section class="login-art"><span class="lg-glow" aria-hidden="true"></span>' +
-      '<div class="lg-brand"><span class="lg-mark">業</span><div><b>業務ポータル</b><small>社内規程AI・実績管理 · デモ版</small></div></div>' +
-      '<div class="lg-hero"><h1>幸せあふれる一日は、<br><span class="gl">確かな準備</span>から。</h1>' +
-      "<p>社内規程の AI と実績の管理を中心に、受注・衣装在庫・請求・スタッフまでを、ひとつの画面で。</p>" +
-      '<div class="lg-biz"><span>ブライダル衣装</span><span>成人式振袖</span><span>フォトウェディング</span><span>七五三・卒業式袴</span></div></div>' +
-      '<div class="lg-glass">' +
-      '<div class="gcard gc1"><span class="gk">' + icon("spark") + "規程アシスタント</span><b>根拠を示して答えます</b><small>「有給休暇は何日？」→ 就業規則 第12条</small></div>" +
-      '<div class="gcard gc2"><span class="gk">' + icon("chart") + "今期の売上（サンプル）</span><b>" + mil(ytd.sales) + '</b><small class="' + upDn(yoy) + '">' + arrow(yoy) + "前年比 " + pct(yoy) + "</small></div>" +
-      '<div class="gcard gc3"><span class="gk">' + icon("cal") + "本日のご来店</span><b>" + (closed ? "定休日" : tdy + "件") + "</b><small>試着・小物選び・返却など</small></div>" +
-      "</div></section>";
+    var tdy = apptList().filter(function (a) { return a.d === 0 && !a.venue; }).length, closed = storeClosedOn(TODAY);
+    var nw = state.ext.inbox.filter(function (x) { return x.st === "new"; }).length;
+    var wk = fairSchedule().filter(function (x) { return x.i < 7; }).length;
+    return '<section class="login-art"><span class="mv" aria-hidden="true"></span><span class="mv-shade" aria-hidden="true"></span>' +
+      '<div class="lg-hero"><span class="script">Yashiro</span>' +
+      '<p class="en">You will surely find the perfect dress<br>for your special occasion here.</p><p class="brand-en">MARIE YASHIRO</p>' +
+      '<h1 class="catch">幸せ溢れる最良の１日を。</h1>' +
+      '<p class="lead">社内規程の AI と実績の管理を中心に、ご予約・受注・衣装・請求までを、ひとつの画面で。</p>' +
+      '<div class="lg-stats"><span><b>' + (closed ? "定休日" : tdy + "件") + "</b>本日のご来店</span><span><b>" + nw + "件</b>新しいご予約</span><span><b>" + wk + "回</b>今週のブライダルフェア</span></div></div>" +
+      newsStrip(false) + "</section>";
   }
   function loginWrap(card) { return '<main class="login">' + loginArt() + '<section class="login-form"><div class="login-card">' + card + "</div></section></main>"; }
   function viewLogin() {
@@ -268,25 +289,25 @@
       var x = D.users[r.id];
       return '<button type="button" class="acct' + (r.id === state.pick ? " on" : "") + '" data-act="acct" data-role="' + r.id + '">' +
         '<span class="av">' + esc(x.name.charAt(0)) + "</span><span><b>" + esc(x.name) + '<span class="role-tag">' + esc(r.label) + "</span></b><small>" + esc(x.title) + "</small></span>" +
-        '<span class="go">ログイン →</span></button>';
+        '<span class="go">' + icon("arrow") + "</span></button>";
     }).join("");
-    return loginWrap("<h2>ログイン</h2>" +
+    return loginWrap(brandBlock("login-brand", "業務ポータル · デモ版") + hpair("ログイン", "Login") +
       '<p class="sub">社員アカウントでログインしてください。表示内容は役職と所属店舗で変わります。</p>' +
       '<label class="field-label">メールアドレス<input type="email" value="' + esc(u.email) + '" readonly></label>' +
       '<label class="field-label">パスワード<input type="password" value="demo-password" readonly></label>' +
-      '<button class="btn pri" data-act="login">ログイン</button>' +
+      '<button class="btn pri big" data-act="login">ログイン' + icon("arrow") + "</button>" +
       '<p class="note-sm">すべてのアカウントで2段階認証が必要です。</p>' +
       '<div class="divider">デモ用アカウント · 役職別</div>' +
       '<div class="demo-accts">' + accts + "</div>" +
-      '<p class="note-sm">サンプルのアカウントです。実在の方とは関係ありません。</p>');
+      '<p class="note-sm">氏名はサンプルです。実在の方とは関係ありません。</p>');
   }
   function viewCode() {
     var u = D.users[state.pick];
-    return loginWrap("<h2>2段階認証</h2>" +
+    return loginWrap(brandBlock("login-brand", "業務ポータル · デモ版") + hpair("2段階認証", "Verification") +
       '<p class="sub">' + esc(u.name) + "さん（" + esc(u.title) + "）。登録したスマートフォンの認証アプリに表示された、6桁の確認コードを入力してください。</p>" +
       '<label class="field-label">確認コード<input type="text" class="code-input" inputmode="numeric" maxlength="6" value="123456" aria-label="確認コード"></label>' +
       '<p class="note-sm">デモでは確認コードが入っています。</p>' +
-      '<button class="btn pri" data-act="verify">確認してログイン</button>' +
+      '<button class="btn pri big" data-act="verify">確認してログイン' + icon("arrow") + "</button>" +
       '<button class="btn" data-act="back-login">戻る</button>');
   }
 
@@ -299,6 +320,7 @@
   }
   function navCount(id) {
     if (id === "confirm") return pendingCount();
+    if (id === "inbox") return inboxNew().length;
     if (id === "leave" && (state.role === "exec" || state.role === "manager")) return leaveScope().filter(function (l) { return l.st === "申請中" && l.name !== U().name; }).length;
     if (id === "expenses" && approver()) return expList().filter(function (e) { return e.st === "承認待ち" || e.st === "要確認"; }).length;
     return 0;
@@ -318,11 +340,11 @@
   function shell(current, inner) {
     var u = U(), n = navOf(current), w = workItems(), dark = isDark();
     return '<div class="app"><aside class="side">' +
-      '<a href="#/home" class="brand-a">' + brandBlock("brand", "デモ版") + "</a>" + '<nav class="navs" aria-label="メニュー">' + navHtml(current) + "</nav>" +
-      '<div class="side-foot">デモ版（画面のイメージ）。規程・氏名・数字はすべてサンプルです。<br>Terveys Technology Solutions 日本支店<br><button class="linklike" data-act="reset">デモのデータを元に戻す</button></div>' +
+      '<a href="#/home" class="brand-a">' + brandBlock("brand", "業務ポータル · デモ版") + "</a>" + '<nav class="navs" aria-label="メニュー">' + navHtml(current) + "</nav>" +
+      '<div class="side-foot">デモ版（画面のイメージ）。店舗・式場・フェア・衣装の名前と写真は、御社と式場のサイトから。お客様・従業員の氏名と数字はサンプルです。<br>Terveys Technology Solutions 日本支店<br><button class="linklike" data-act="reset">デモのデータを元に戻す</button></div>' +
       "</aside>" +
       '<div class="main"><header class="top">' +
-      '<div class="ttl"><span class="crumb">' + esc(n.id === "home" ? "概要" : n.grp) + "</span><h1>" + esc(n.label) + phaseChip(n.ph) + "</h1></div>" +
+      '<div class="ttl"><span class="crumb"><span class="en">' + esc(n.en || "") + "</span>" + esc(n.id === "home" ? "概要" : n.grp) + "</span><h1>" + esc(n.label) + phaseChip(n.ph) + "</h1></div>" +
       '<button type="button" class="search" data-act="pal-open" aria-label="画面をさがす・規程に質問（⌘K）">' + icon("search") + '<span class="ph">画面をさがす・規程に質問…</span><kbd>⌘K</kbd></button>' +
       '<span class="sp"></span>' +
       '<button type="button" class="iconbtn tbtn" data-act="theme" title="' + (dark ? "ライト表示にする" : "ダーク表示にする") + '" aria-label="表示の切り替え">' + icon(dark ? "sun" : "moon") + "</button>" +
@@ -331,7 +353,8 @@
       '<div class="userchip"><span class="av">' + esc(u.name.charAt(0)) + "</span><div><b>" + esc(u.name) + "</b><small>" + esc(u.title) + "</small></div>" +
       '<button class="iconbtn" data-act="logout" title="ログアウト" aria-label="ログアウト">' + icon("out") + "</button></div>" +
       "</header>" +
-      '<main class="content' + (state.anim ? " anim" : "") + '">' + inner + "</main></div>" + bottomNav(current) + "</div>" + sheetHtml(current) + palHtml();
+      '<main class="content' + (state.anim ? " anim" : "") + '">' + inner + "</main></div>" + bottomNav(current) + "</div>" +
+      (current !== "ai" ? '<a class="vtab" href="#/ai" aria-label="規程AIに聞く">' + '<span class="vt">規程AIに聞く</span>' + icon("arrow") + "</a>" : "") + sheetHtml(current) + palHtml();
   }
   function bellPop(w) {
     return '<div class="pop" role="dialog" aria-label="確認待ち"><div class="pop-h">確認待ち</div>' + (w.length ? w.map(function (x) {
@@ -341,10 +364,11 @@
   // スマートフォン：下のタブと、全部の画面を出すメニュー
   function bottomNav(current) {
     var items = [["home", "ホーム", "home"], ["ai", "規程AI", "spark"]];
+    items.push(allowed("inbox") ? ["inbox", "受付", "inbox"] : allowed("calendar") ? ["calendar", "予約", "cal"] : ["leave", "休暇", "leave"]);
     items.push(allowed("results") ? ["results", "実績", "chart"] : allowed("input") ? ["input", "入力", "edit"] : ["orders", "受注", "list"]);
-    items.push(allowed("calendar") ? ["calendar", "予約", "cal"] : ["leave", "休暇", "leave"]);
     return '<nav class="bnav" aria-label="よく使う画面">' + items.map(function (x) {
-      return '<a href="#/' + x[0] + '" class="' + (current === x[0] ? "on" : "") + '">' + icon(x[2]) + "<span>" + x[1] + "</span></a>";
+      var n = navCount(x[0]);
+      return '<a href="#/' + x[0] + '" class="' + (current === x[0] ? "on" : "") + '">' + icon(x[2]) + (n ? '<i class="bdot">' + n + "</i>" : "") + "<span>" + x[1] + "</span></a>";
     }).join("") + '<button type="button" data-act="sheet" class="' + (state.ui.sheet ? "on" : "") + '">' + icon("menu") + "<span>メニュー</span></button></nav>";
   }
   function sheetHtml(current) {
@@ -357,7 +381,7 @@
       '<div class="sheet-foot"><button type="button" class="btn" data-act="theme">' + icon(dark ? "sun" : "moon") + (dark ? "ライト表示" : "ダーク表示") + "</button>" +
       '<button type="button" class="btn" data-act="reset">' + icon("undo") + "デモを元に戻す</button>" +
       '<button type="button" class="btn" data-act="logout">' + icon("out") + "ログアウト</button></div>" +
-      '<p class="note-sm">デモ版：規程・氏名・数字はすべてサンプルです。</p></div>';
+      '<p class="note-sm">デモ版：店舗・式場・フェア・衣装の名前と写真は御社と式場のサイトから。氏名・数字・規程はサンプルです。</p></div>';
   }
 
   // ---------- 規程アシスタント ----------
@@ -624,7 +648,7 @@
     var book = sumRange("sekou", TODAY_S, FY_END_S, store);
     var yoy = ratio(ytd.sales, lastYtd.sales);
 
-    var where = store === "all" ? "全店舗（A〜C店）" : storeName(store);
+    var where = store === "all" ? "全店舗（松江本店・出雲店・米子店・鳥取店）" : storeName(store);
     var storeSel = full ? '<select data-act="store" aria-label="店舗" style="width:auto;min-height:34px;padding:5px 8px;font-size:12.5px">' +
       ['<option value="all"' + (store === "all" ? " selected" : "") + ">全店舗</option>"].concat(D.stores.map(function (s) {
         return '<option value="' + s.id + '"' + (s.id === store ? " selected" : "") + ">" + esc(s.name) + "</option>";
@@ -783,6 +807,7 @@
   // 第3段階（オプション）：受注管理・衣装在庫（提案書の第3段階の画面を、操作できる形にしたもの）
   // ======================================================================
   var P = window.P3_DATA;
+  var ST_FIRST = P.stages[0], ST_DONE = P.stages[P.stages.length - 1], ST_CONTRACT = "ご成約", ST_SIZE = "サイズ補正";
   function dayStr(n) { return ymd(addDays(TODAY, n)); }
   function toDate(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function dayDiff(a, b) { return Math.round((toDate(a) - toDate(b)) / 86400000); }
@@ -794,9 +819,9 @@
       x.date = dayStr(o.day);
       x.contractDate = o.contract == null ? null : dayStr(o.contract);
       var created = o.contract == null ? -7 : o.contract - 21;
-      x.history = [[dayStr(created), "問合せを受付"]];
-      if (o.contract != null) x.history.push([dayStr(o.contract), "成約（内金を請求）"]);
-      if (o.stage !== "問合せ") x.history.push([dayStr(o.day < 0 ? o.day + 1 : -2), "ステージを「" + o.stage + "」に変更"]);
+      x.history = [[dayStr(created), "ご来店予約を受付（" + o.source + "）"]];
+      if (o.contract != null) x.history.push([dayStr(o.contract), "ご成約（内金を請求）"]);
+      if (o.stage !== ST_FIRST) x.history.push([dayStr(o.day < 0 ? o.day + 1 : -2), "ステージを「" + o.stage + "」に変更"]);
       delete x.day; delete x.contract;
       return x;
     });
@@ -814,7 +839,7 @@
   state.p3 = { view: "list", store: "all", biz: "all", stage: "all", inv: { store: "all", cat: "all", status: "all", q: "", view: "gallery" }, drawer: null };
 
   function bizOf(id) { for (var i = 0; i < P.businesses.length; i++) if (P.businesses[i].id === id) return P.businesses[i]; return P.businesses[0]; }
-  function catOf(code) { var id = code.split("-")[0]; for (var i = 0; i < P.categories.length; i++) if (P.categories[i].id === id) return P.categories[i]; return P.categories[0]; }
+  function catOf(code) { var c = cosOf(code), id = c ? c.cat : String(code).split("-")[0]; for (var i = 0; i < P.categories.length; i++) if (P.categories[i].id === id) return P.categories[i]; return P.categories[0]; }
   function cosOf(code) { for (var i = 0; i < state.costumes.length; i++) if (state.costumes[i].code === code) return state.costumes[i]; return null; }
   function orderOf(no) { for (var i = 0; i < state.orders.length; i++) if (state.orders[i].no === no) return state.orders[i]; return null; }
   function stageIdx(s) { return P.stages.indexOf(s); }
@@ -845,14 +870,15 @@
     }
     return '<svg viewBox="0 0 100 120" aria-hidden="true">' + body + "</svg>";
   }
-  function cosImg(c) {
+  function cosImg(c, big) {
+    if (c.img) return '<div class="cimg photo" style="background:' + mix(c.hex, 255, 0.82) + '"><img src="' + esc(c.img[big ? 1 : 0]) + '" alt="' + esc(c.name) + '" loading="lazy" decoding="async"></div>';
     return '<div class="cimg" style="background:linear-gradient(165deg,' + mix(c.hex, 255, 0.88) + "," + mix(c.hex, 255, 0.7) + ')">' + silhouette(catOf(c.code).shape, c.hex) + "</div>";
   }
   function dot(c) { return '<span class="dot" style="background:' + c.hex + '" title="' + esc(c.color) + '"></span>'; }
 
   // 空き状況：同じ衣装の予約（お日取りの前後3日）と、戻る日を見る
   function reservations(code, exceptNo) {
-    return state.orders.filter(function (o) { return o.no !== exceptNo && o.stage !== "完了" && o.costumes.indexOf(code) >= 0; });
+    return state.orders.filter(function (o) { return o.no !== exceptNo && o.stage !== ST_DONE && o.costumes.indexOf(code) >= 0; });
   }
   function availability(c, date, exceptNo) {
     var clash = reservations(c.code, exceptNo).filter(function (o) { return Math.abs(dayDiff(o.date, date)) <= 3; })[0];
@@ -887,12 +913,12 @@
     var list = base.filter(function (o) {
       return (fs === "all" || o.store === fs) && (f.biz === "all" || o.biz === f.biz) && (f.stage === "all" || o.stage === f.stage);
     });
-    var active = base.filter(function (o) { return o.stage !== "完了"; }).length;
-    var soon = base.filter(function (o) { return o.stage !== "完了" && o.date >= TODAY_S && o.date <= dayStr(30); }).length;
-    var waiting = base.filter(function (o) { return o.stage === "成約" && !o.paid; }).length;
-    var done = base.filter(function (o) { return o.stage === "完了" && o.date >= dayStr(-30); }).length;
-    var kpis = '<div class="kpis k4">' + kpi("進行中の受注", active + "件", "完了を除く") + kpi("30日以内のお日取り", soon + "件", "準備の確認を") +
-      kpi("内金待ち", waiting + "件", "成約済み・入金なし") + kpi("直近30日の完了", done + "件", "返却・残金の入金まで") + "</div>";
+    var active = base.filter(function (o) { return o.stage !== ST_DONE; }).length;
+    var soon = base.filter(function (o) { return o.stage !== ST_DONE && !o.dateTbd && o.date >= TODAY_S && o.date <= dayStr(30); }).length;
+    var waiting = base.filter(function (o) { return o.stage === ST_CONTRACT && !o.paid; }).length;
+    var done = base.filter(function (o) { return o.stage === ST_DONE && o.date >= dayStr(-30); }).length;
+    var kpis = '<div class="kpis k4">' + kpi("進行中の受注", active + "件", "ご返却・完了を除く") + kpi("30日以内のお日取り", soon + "件", "準備の確認を") +
+      kpi("内金待ち", waiting + "件", "ご成約・入金なし") + kpi("直近30日の完了", done + "件", "ご返却・残金の入金まで") + "</div>";
     var filters = '<div class="filters">' + (U().store ? storeChip() : sel("p3-filter", "store", f.store, STORE_OPTS)) +
       sel("p3-filter", "biz", f.biz, [["all", "全事業"]].concat(P.businesses.map(function (b) { return [b.id, b.name]; }))) +
       sel("p3-filter", "stage", f.stage, [["all", "全ステージ"]].concat(P.stages.map(function (s) { return [s, s]; }))) +
@@ -904,16 +930,17 @@
       body = '<div class="board">' + P.stages.map(function (s) {
         var cards = list.filter(function (o) { return o.stage === s; }).map(function (o) {
           return '<button type="button" class="ocard" data-act="order-open" data-no="' + o.no + '"><span class="ono">' + o.no + "</span><b>" + esc(o.customer) + "</b><small>" +
-            esc(slashDate(o.date)) + " · " + esc(storeName(o.store)) + "</small>" + bizTag(o.biz) + "<small>" + yen(o.amount) + "</small></button>";
+            esc(oDate(o)) + " · " + esc(storeName(o.store)) + "</small>" + (o.venue ? '<small class="venue">' + icon("pin") + esc(o.venue) + "</small>" : "") + bizTag(o.biz) + "<small>" + amt(o.amount) + "</small></button>";
         }).join("");
         return '<div class="bcol"><div class="bcol-h">' + stagePill(s) + "<span>" + list.filter(function (o) { return o.stage === s; }).length + "件</span></div>" + cards + "</div>";
       }).join("") + "</div>";
     } else {
       var rows = list.map(function (o) {
         var cs = o.costumes.map(cosOf).filter(Boolean);
-        return '<tr class="click" data-act="order-open" data-no="' + o.no + '"><td><span class="ono">' + o.no + "</span></td><td><b>" + esc(o.customer) + "</b></td><td>" + bizTag(o.biz) +
-          "</td><td>" + esc(storeName(o.store)) + "</td><td>" + (cs.length ? '<span class="dots">' + cs.map(dot).join("") + " " + cs.length + "</span>" : "—") +
-          "</td><td>" + esc(slashDate(o.date)) + "</td><td>" + stagePill(o.stage) + '</td><td class="num">' + yen(o.amount) + "</td><td>" + esc(o.staff) + "</td><td>" +
+        return '<tr class="click" data-act="order-open" data-no="' + o.no + '"><td><span class="ono">' + o.no + "</span></td><td><b>" + esc(o.customer) + "</b>" +
+          (o.venue ? '<div class="sub2">' + esc(o.venue + (o.style ? " · " + o.style : "")) + "</div>" : "") + "</td><td>" + bizTag(o.biz) +
+          "</td><td>" + esc(storeName(o.store)) + "</td><td>" + (cs.length ? costumeStrip(cs) : "—") +
+          "</td><td>" + esc(oDate(o)) + "</td><td>" + stagePill(o.stage) + '</td><td class="num">' + amt(o.amount) + "</td><td>" + esc(o.staff) + "</td><td>" +
           '<button class="ibtn" data-act="order-open" data-no="' + o.no + '" title="表示" aria-label="表示">' + icon("eye") + "</button> " +
           (edit ? '<button class="ibtn" data-act="order-edit" data-no="' + o.no + '" title="編集" aria-label="編集">' + icon("edit") + "</button>" : "") + "</td></tr>";
       }).join("") || '<tr><td colspan="10">条件に合う受注はありません。</td></tr>';
@@ -921,6 +948,26 @@
         rows + "</tbody></table></div></div>";
     }
     return p3Note() + kpis + filters + body;
+  }
+  function amt(n) { return n ? yen(n) : "未定"; }
+  function oDate(o) { return o.dateTbd ? "未定" : o.dateLabel || slashDate(o.date); }
+  // ご予約フォームの「挙式日・会場（学校）・ご使用日など」から、お日取りと会場を読み取る
+  function parseWhen(t) {
+    t = String(t || "");
+    var m = t.match(/(20\d\d)年\s*(\d{1,2})月(?:\s*(\d{1,2})日)?/);
+    if (m) return { date: ymd(new Date(+m[1], +m[2] - 1, m[3] ? +m[3] : 15)), label: +m[1] + "年" + +m[2] + "月" + (m[3] ? +m[3] + "日" : "頃") };
+    var k = t.match(/(20\d\d)年\s*(春|夏|秋|冬)/);
+    if (k) return { date: ymd(new Date(+k[1], { 春: 3, 夏: 6, 秋: 9, 冬: 11 }[k[2]], 15)), label: k[1] + "年" + k[2] + "頃" };
+    return null;
+  }
+  function parseVenue(t) {
+    t = String(t || "");
+    for (var i = 0; i < P.venues.length; i++) if (t.indexOf(P.venues[i].name) >= 0 || t.indexOf(P.venues[i].short) >= 0) return P.venues[i];
+    var m = t.match(/二十歳の集い（[^）]*）|二十歳の集い|成人式|卒業式|七五三参り|七五三/);
+    return m ? { name: m[0], kind: "" } : null;
+  }
+  function costumeStrip(cs) {
+    return cs.length ? '<span class="cstrip">' + cs.slice(0, 3).map(function (c) { return c.img ? '<img src="' + esc(c.img[0]) + '" alt="" loading="lazy">' : dot(c); }).join("") + "</span>" : "";
   }
 
   function orderDrawer(o) {
@@ -939,14 +986,16 @@
         "</div>" + (edit ? '<div class="ck-acts"><button class="btn' + (all ? " pri" : "") + '" data-act="order-next" data-no="' + o.no + '"' + (all ? "" : " disabled") + ">次へ：" + esc(next) + "</button>" +
         '<span class="sp"></span><button class="linkbtn" data-act="order-cancel">受注をキャンセル</button></div>' : "") + "</div></div>";
     } else {
-      nextCard = '<div class="notice">この受注は完了しています（返却・残金の入金まで確認済み）。</div>';
+      nextCard = '<div class="notice">この受注は完了しています（ご返却・残金の入金まで確認済み）。</div>';
     }
-    var tiles = '<div class="itiles">' + itile("お日取り", slashDate(o.date)) + itile("会場・用途", o.venue || "—") + itile("成約日", o.contractDate ? slashDate(o.contractDate) : "まだ成約していません") +
-      itile("受注金額", yen(o.amount)) + itile("入金済み", yen(o.paid || 0)) + itile("残金", yen(o.amount - (o.paid || 0))) + "</div>";
+    var tiles = '<div class="itiles">' + itile("お日取り", o.dateTbd ? (/ブライダルフェア/.test(o.source) ? "未定（式場のご成約で決まります）" : "未定（ご来店の際に伺います）") : oDate(o)) + itile("会場・用途", o.venue || "—") + itile("式の形態", o.style || "—") +
+      itile("成約日", o.contractDate ? slashDate(o.contractDate) : "まだご成約前です") + itile("受注金額", amt(o.amount)) + itile("入金済み", yen(o.paid || 0)) +
+      itile("残金", o.amount ? yen(o.amount - (o.paid || 0)) : "—") + itile("経路", o.source || "—") + itile("担当", o.staff) + "</div>" +
+      (o.plan ? '<div class="plan-line">' + icon("spark") + "<span><b>プラン・キャンペーン</b>" + esc(o.plan) + "</span></div>" : "");
     var total = cs.reduce(function (s, c) { return s + c.price; }, 0);
     var cosCard = '<div class="card"><div class="card-h"><h3>在庫から選んだ衣装</h3><span class="sub">' + cs.length + " 点 · " + yen(total) + "</span></div><div class=\"card-b\">" +
       (cs.length ? '<div class="cgrid">' + cs.map(function (c) {
-        return '<button type="button" class="cpick" data-act="cos-open" data-code="' + c.code + '">' + cosImg(c) + '<div class="cmeta"><span class="code">' + esc(c.code) + " · " + esc(c.size) + '</span><span class="nm">' + esc(c.name) +
+        return '<button type="button" class="cpick" data-act="cos-open" data-code="' + esc(c.code) + '">' + cosImg(c) + '<div class="cmeta"><span class="code">' + esc(c.code) + " · " + esc(catOf(c.code).name) + " · " + esc(c.size) + '</span><span class="nm">' + esc(c.name) +
           '</span><span class="pr">' + esc(c.color) + " · " + yen(c.price) + "</span></div></button>";
       }).join("") + "</div>" : '<p class="note-sm">まだ衣装を選んでいません。「編集」から、在庫の衣装を空き状況を見ながら選べます。</p>') + "</div></div>";
     var r = o.req || noReq(), m = r.m || {};
@@ -975,7 +1024,7 @@
         return '<tr><td><span class="ono">' + v.no + "</span></td><td>" + esc(v.type) + "</td><td>期限 " + esc(slashDate(v.due)) + '</td><td class="num">' + yen(invAmount(v)) + "</td><td>" + pill(st[0], st[1]) + "</td><td>" +
           (!v.paid && canEdit("invoices") ? '<button class="btn sm" data-act="inv-pay" data-no="' + v.no + '">入金を登録</button>' : "") + "</td></tr>";
       }).join("") + "</tbody></table></div>" : '<div class="card-b note-sm">まだ請求書はありません。</div>') + "</div>";
-    var aps = allowed("calendar") ? apptList().filter(function (a) { return a.o.no === o.no; }) : [];
+    var aps = allowed("calendar") ? apptList().filter(function (a) { return a.o && a.o.no === o.no; }) : [];
     var apCard = !aps.length ? "" : '<div class="card"><div class="card-h"><h3>来店予約</h3><span class="sub">今後7日間</span></div><div class="card-b rlist">' + aps.map(function (a) {
       var t = X.apptTypes[a.type];
       return '<div class="r" data-act="cal-goto"><span class="ap-when">' + esc(mdw(a.date)) + " " + a.t + '</span><span class="tag t-' + t.tone + '">' + esc(t.name) + '</span><span class="sp" style="flex:1"></span><span class="note-sm">' + esc(a.staff) + "</span></div>";
@@ -986,16 +1035,16 @@
     var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(o.no + " · " + storeName(o.store) + " · 担当: " + o.staff) + "</div><h2>" + esc(o.customer) + '</h2><div class="dh-tags">' +
       bizTag(o.biz) + stagePill(o.stage) + '<span class="tag plain">' + esc(o.source) + "</span></div></div>" +
       '<div class="dh-acts">' + (edit ? '<button class="btn" data-act="order-edit" data-no="' + o.no + '">' + icon("edit") + "編集</button>" : "") + '<button class="btn" data-act="drawer-close">閉じる</button></div></div>';
-    return head + '<div class="drawer-b"><div class="card"><div class="stepper">' + steps + "</div></div>" + nextCard + tiles + apCard + cosCard + reqCard + invCard + exCard + hist + "</div>";
+    return head + '<div class="drawer-b"><div class="card"><div class="stepper">' + steps + '</div><p class="stage-help">' + icon("spark") + esc((P.stageHelp || {})[o.stage] || "") + "</p></div>" + nextCard + tiles + apCard + cosCard + reqCard + invCard + exCard + hist + "</div>";
   }
   function itile(k, v) { return '<div class="itile"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
 
   // ---------- 受注の登録・編集（4つの手順） ----------
   var WIZ = ["お客様・お日取り", "衣装を選択", "ご要望・お直し", "確認"];
   function draftFrom(o) {
-    if (o) return JSON.parse(JSON.stringify({ no: o.no, customer: o.customer, biz: o.biz, store: o.store, date: o.date, venue: o.venue, staff: o.staff, source: o.source, amount: String(o.amount), costumes: o.costumes, req: o.req || noReq() }));
-    var store = U().store || "A";
-    return { no: null, customer: "", biz: "bridal", store: store, date: dayStr(120), venue: "", staff: staffOf(store)[0], source: "来店", amount: "", costumes: [], req: noReq() };
+    if (o) return JSON.parse(JSON.stringify({ no: o.no, customer: o.customer, biz: o.biz, store: o.store, date: o.date, venue: o.venue, style: o.style || "", plan: o.plan || "", staff: o.staff, source: o.source, amount: String(o.amount || ""), costumes: o.costumes, req: o.req || noReq() }));
+    var store = U().store || "matsue";
+    return { no: null, customer: "", biz: "bridal", store: store, date: dayStr(120), venue: "", style: "", plan: "", staff: staffOf(store)[0], source: "ご来店", amount: "", costumes: [], req: noReq() };
   }
   function draftTotal(dr) { return dr.costumes.map(cosOf).filter(Boolean).reduce(function (s, c) { return s + c.price; }, 0); }
   function editDrawer(d) {
@@ -1013,7 +1062,10 @@
         '<div class="field"><label for="w-biz">事業</label><select id="w-biz" data-draft="biz">' + opt(P.businesses.map(function (b) { return [b.id, b.name]; }), dr.biz) + "</select></div>" +
         '<div class="field"><label for="w-store">店舗</label><select id="w-store" data-draft="store">' + opt(D.stores.map(function (s) { return [s.id, s.name]; }), dr.store) + "</select></div>" +
         '<div class="field"><label for="w-date">お日取り<span class="req">必須</span></label><input type="date" id="w-date" data-draft="date" value="' + esc(dr.date) + '"><p class="help">衣装の空き状況は、この日で確かめます。</p></div>' +
-        '<div class="field"><label for="w-venue">会場・用途</label><input type="text" id="w-venue" data-draft="venue" value="' + esc(dr.venue) + '" placeholder="例：ホテル挙式、前撮り（スタジオ）"></div>' +
+        '<div class="field"><label for="w-venue">会場・用途</label><input type="text" id="w-venue" data-draft="venue" value="' + esc(dr.venue) + '" list="venue-list" placeholder="例：ヴィラ・ノッツェ コルティーレ出雲、出雲大社">' +
+        '<datalist id="venue-list">' + P.venues.map(function (v) { return '<option value="' + esc(v.name) + '">'; }).join("") + "</datalist></div>" +
+        '<div class="field"><label for="w-style">式の形態</label><select id="w-style" data-draft="style">' + opt([["", "（選ぶ）"]].concat(P.styles.map(function (x) { return [x, x]; })), dr.style) + "</select></div>" +
+        '<div class="field"><label for="w-plan">プラン・キャンペーン</label><select id="w-plan" data-draft="plan">' + opt([["", "なし"]].concat(P.plans.map(function (x) { return [x, x]; })), dr.plan) + "</select></div>" +
         '<div class="field"><label for="w-staff">担当</label><select id="w-staff" data-draft="staff">' + opt(staffOf(dr.store).map(function (n) { return [n, n]; }), dr.staff) + "</select></div>" +
         '<div class="field"><label for="w-src">経路</label><select id="w-src" data-draft="source">' + opt(P.sources.map(function (s) { return [s, s]; }), dr.source) + "</select></div>" +
         '<div class="field"><label for="w-amt">受注金額（税別・見込み）</label><input type="number" id="w-amt" data-draft="amount" value="' + esc(dr.amount) + '" min="0" step="1000" placeholder="空欄なら、選んだ衣装の合計"></div>' +
@@ -1026,8 +1078,8 @@
       var items = state.costumes.filter(function (c) { var k = catOf(c.code); return k.biz.indexOf(dr.biz) >= 0 && (cat === "all" || k.id === cat); });
       var cards = items.map(function (c) {
         var av = availability(c, dr.date, dr.no), on = dr.costumes.indexOf(c.code) >= 0;
-        return '<button type="button" class="cpick' + (on ? " sel" : "") + (!av.ok && !on ? " na" : "") + '" data-act="wiz-pick" data-code="' + c.code + '">' + (on ? '<span class="chk">✓</span>' : "") + cosImg(c) +
-          '<div class="cmeta"><span class="code">' + esc(c.code + " · " + c.size + " · " + storeName(c.store)) + '</span><span class="nm">' + esc(c.name) + '</span><span class="pr">' + yen(c.price) +
+        return '<button type="button" class="cpick' + (on ? " sel" : "") + (!av.ok && !on ? " na" : "") + '" data-act="wiz-pick" data-code="' + esc(c.code) + '">' + (on ? '<span class="chk">✓</span>' : "") + cosImg(c) +
+          '<div class="cmeta"><span class="code">' + esc(c.code + " · " + c.size + " · " + storeName(c.store)) + '</span><span class="nm">' + esc(c.name) + '</span><span class="pr">' + esc(c.color) + " · " + yen(c.price) +
           '</span><span class="' + av.cls + '">' + esc(av.text) + "</span></div></button>";
       }).join("");
       body = '<div class="card"><div class="card-b" style="display:grid;gap:12px">' + chips +
@@ -1053,7 +1105,7 @@
       var cs = dr.costumes.map(cosOf).filter(Boolean);
       var amt = Number(dr.amount) || draftTotal(dr);
       var rows = [["お客様", dr.customer || "（未入力）"], ["事業", bizOf(dr.biz).name], ["店舗", storeName(dr.store)], ["お日取り", dr.date ? slashDate(dr.date) : "（未入力）"],
-        ["会場・用途", dr.venue || "—"], ["担当", dr.staff], ["経路", dr.source], ["受注金額（税別）", yen(amt)],
+        ["会場・用途", dr.venue || "—"], ["式の形態", dr.style || "—"], ["プラン・キャンペーン", dr.plan || "なし"], ["担当", dr.staff], ["経路", dr.source], ["受注金額（税別）", yen(amt)],
         ["衣装", cs.length ? cs.map(function (c) { return c.code + " " + c.name; }).join("、") : "選んでいません"],
         ["ご要望", [dr.req.colors.join("・"), dr.req.design, dr.req.parts.length ? "お直し：" + dr.req.parts.join("・") : ""].filter(Boolean).join(" / ") || "—"]];
       body = '<div class="card"><div class="tbl-wrap"><table class="sumtbl"><tbody>' + rows.map(function (x) { return "<tr><td>" + esc(x[0]) + "</td><td>" + esc(x[1]) + "</td></tr>"; }).join("") +
@@ -1079,13 +1131,14 @@
     if (!String(dr.customer).trim() || !dr.date) { d.step = 1; render(); toast("お客様のお名前とお日取りを入力してください。"); return; }
     var o = dr.no ? orderOf(dr.no) : null;
     if (!o) {
-      o = { no: nextNo(), stage: "打合せ・試着", paid: 0, contractDate: null, history: [[TODAY_S, "受注を登録"]] };
+      o = { no: nextNo(), stage: "打合せ・試着", paid: 0, contractDate: null, history: [[TODAY_S, "受注を登録"]], style: "", plan: "" };
       o.checks = (P.checklists[o.stage] || []).map(function () { return false; });
       state.orders.unshift(o);
     } else {
       o.history.push([TODAY_S, "受注を編集"]);
     }
-    ["customer", "biz", "store", "date", "venue", "staff", "source"].forEach(function (k) { o[k] = dr[k]; });
+    if (o.date !== dr.date) o.dateTbd = false;
+    ["customer", "biz", "store", "date", "venue", "style", "plan", "staff", "source"].forEach(function (k) { o[k] = dr[k]; });
     o.amount = Number(dr.amount) || draftTotal(dr);
     var added = dr.costumes.filter(function (c) { return (o.costumes || []).indexOf(c) < 0; });
     o.costumes = dr.costumes.slice();
@@ -1104,25 +1157,25 @@
     return state.costumes.filter(function (c) {
       var st = cosStatus(c).label;
       return (f.store === "all" || c.store === f.store) && (f.cat === "all" || catOf(c.code).id === f.cat) && (f.status === "all" || st === f.status) &&
-        (!q || norm(c.code + c.name + c.color).indexOf(q) >= 0);
+        (!q || norm(c.code + c.name + c.color + catOf(c.code).name).indexOf(q) >= 0);
     });
   }
   function invListHtml() {
     var f = state.p3.inv, list = invFiltered();
-    var head = '<p class="note-sm" style="margin-bottom:10px">サンプル ' + list.length + " 点を表示</p>";
+    var head = '<p class="note-sm" style="margin-bottom:10px">' + list.length + " 点を表示 · 名前・品番・写真は御社サイトから（紋付袴・卒業式袴・七五三・小物はサンプル）。料金と状態はサンプルです</p>";
     if (!list.length) return head + '<div class="notice">条件に合う衣装はありません。</div>';
     if (f.view === "table") {
       return head + '<div class="card"><div class="tbl-wrap"><table><thead><tr><th>品番</th><th>名称</th><th>カテゴリ</th><th>色</th><th>サイズ</th><th class="num">レンタル料</th><th>店舗</th><th>状態</th><th class="num">貸出回数</th><th>次の予約</th></tr></thead><tbody>' +
         list.map(function (c) {
           var st = cosStatus(c), nx = reservations(c.code).filter(function (o) { return o.date >= TODAY_S; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
-          return '<tr class="click" data-act="cos-open" data-code="' + c.code + '"><td><span class="ono">' + esc(c.code) + "</span></td><td><b>" + esc(c.name) + "</b></td><td>" + esc(catOf(c.code).name) +
+          return '<tr class="click" data-act="cos-open" data-code="' + esc(c.code) + '"><td><span class="ono">' + esc(c.code) + "</span></td><td><b>" + esc(c.name) + "</b>" + (c.pick ? ' <span class="pickb">おすすめ</span>' : "") + "</td><td>" + esc(catOf(c.code).name) +
             '</td><td><span class="colorline">' + dot(c) + esc(c.color) + "</span></td><td>" + esc(c.size) + '</td><td class="num">' + yen(c.price) + "</td><td>" + esc(storeName(c.store)) +
             '</td><td><span class="pill ' + st.tone + '">' + st.label + '</span></td><td class="num">' + c.rentals + "回</td><td>" + (nx ? esc(slashDate(nx.date)) + " " + esc(nx.no) : "—") + "</td></tr>";
         }).join("") + "</tbody></table></div></div>";
     }
     return head + '<div class="inv-grid">' + list.map(function (c) {
       var st = cosStatus(c);
-      return '<button type="button" class="cpick icard" data-act="cos-open" data-code="' + c.code + '"><span class="pill ' + st.tone + ' st">' + st.label + "</span>" + cosImg(c) +
+      return '<button type="button" class="cpick icard" data-act="cos-open" data-code="' + esc(c.code) + '"><span class="pill ' + st.tone + ' st">' + st.label + "</span>" + (c.pick ? '<span class="pickb on-img">おすすめ</span>' : "") + cosImg(c) +
         '<div class="cmeta"><span class="code">' + esc(c.code + " · " + catOf(c.code).name) + '</span><span class="nm">' + esc(c.name) + "</span>" +
         '<span class="colorline">' + dot(c) + esc(c.color + " · " + c.size) + '<span style="margin-left:auto">' + yen(c.price) + "</span></span>" +
         '<span class="code">' + esc(storeName(c.store)) + " · " + c.rentals + "回貸出</span></div></button>";
@@ -1134,7 +1187,7 @@
     var busy = all.filter(function (c) { return c.status === "rented" || reservations(c.code).some(function (o) { return o.date >= TODAY_S && o.date <= dayStr(30); }); }).length;
     var maint = all.filter(function (c) { return c.status === "cleaning" || c.status === "repair"; });
     var backSoon = maint.filter(function (c) { return c.backDate && c.backDate <= dayStr(7); }).length;
-    var kpis = '<div class="kpis k4">' + kpi("在庫点数", all.length + "点", "サンプル · ドレス・和装・タキシード・小物") + kpi("本日貸出可", avail + "点", "在庫の " + Math.round(avail / all.length * 100) + "%") +
+    var kpis = '<div class="kpis k4">' + kpi("デモの在庫", all.length + "点", "御社の衣裳は全体で10,000点以上") + kpi("本日貸出可", avail + "点", "在庫の " + Math.round(avail / all.length * 100) + "%") +
       kpi("貸出中・予約済", busy + "点", "今後30日") + kpi("お直し・クリーニング中", maint.length + "点", "今週戻り予定 " + backSoon + "点") + "</div>";
     var statuses = ["貸出可", "予約済", "貸出中", "クリーニング中", "お直し中"];
     var filters = '<div class="filters">' + sel("inv-filter", "store", f.store, STORE_OPTS) +
@@ -1145,7 +1198,9 @@
       '<button type="button" data-act="inv-view" data-v="table" class="' + (f.view === "table" ? "on" : "") + '">' + icon("table") + "表</button></div>" +
       '<span class="sp"></span>' + (canEdit("inventory") ? '<button class="btn" data-act="p3-demo" data-msg="デモでは取り込めません。本番では、Excel の在庫リストをそのまま取り込めます。">' + icon("up") + "在庫リストを取込</button>" +
       '<button class="btn pri" data-act="p3-demo" data-msg="デモでは登録できません。本番では、写真・サイズ・料金を入れて衣装を登録します。">' + icon("plus") + "衣装を登録</button>" : '<span class="note-sm">閲覧のみ（' + esc(roleLabel(state.role)) + "）</span>") + "</div>";
-    return p3Note() + kpis + filters + '<div id="inv-list">' + invListHtml() + "</div>";
+    var banner = '<div class="photo-band" style="background-image:url(img/site/top-reason-01.jpg)"><div><span class="en">Costume</span><b>山陰No.1の豊富なバリエーション。</b>' +
+      "<small>ウェディングドレス・メンズ衣裳・和装など、トータルで10,000点以上（ヴィラ・ノッツェ コルティーレ出雲のサイトより）。写真で選べるので、お客様にもスタッフにも一目で伝わります。</small></div></div>";
+    return p3Note() + banner + kpis + filters + '<div id="inv-list">' + invListHtml() + "</div>";
   }
   function costumeDrawer(c) {
     var st = cosStatus(c), cat = catOf(c.code);
@@ -1163,9 +1218,10 @@
     }).join("") || '<p class="note-sm">予約はありません。</p>';
     var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(c.code + " · " + cat.name + " · " + storeName(c.store)) + "</div><h2>" + esc(c.name) + '</h2><div class="dh-tags"><span class="pill ' + st.tone + '">' + st.label + "</span></div></div>" +
       '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
-    return head + '<div class="drawer-b"><div class="cos-top">' + cosImg(c) + '<div class="itiles">' +
+    return head + '<div class="drawer-b"><div class="cos-top">' + cosImg(c, true) + '<div class="itiles">' +
       '<div class="itile"><div class="k">色</div><div class="v"><span class="colorline">' + dot(c) + esc(c.color) + "</span></div></div>" +
-      itile("サイズ", c.size) + itile("レンタル料", yen(c.price)) + itile("貸出回数", c.rentals + "回") + itile("保管場所", storeName(c.store)) + itile("購入日", c.bought) + "</div></div>" +
+      itile("サイズ", c.size) + itile("レンタル料（サンプル）", yen(c.price)) + itile("貸出回数", c.rentals + "回") + itile("保管場所", storeName(c.store)) + itile("カテゴリ", catOf(c.code).name) + "</div></div>" +
+      (c.pick ? '<div class="plan-line">' + icon("spark") + "<span><b>御社サイトの「おすすめ」</b>" + (c.img ? "写真は御社サイトの写真です。" : "") + "</span></div>" : "") +
       '<div class="card"><div class="card-h"><h3>空き状況 · 今後13週</h3><span class="sp"></span><span class="lg"><span><i style="background:var(--good-bg)"></i>空き</span><span><i style="background:var(--gold)"></i>予約</span><span><i style="background:var(--warn-bg)"></i>メンテナンス</span></span></div>' +
       '<div class="card-b"><div class="weeks">' + cells.join("") + '</div><div class="wk-dates"><span>' + esc(slashDate(first)) + "</span><span>" + esc(slashDate(last)) + "</span></div></div></div>" +
       '<div class="card"><div class="card-h"><h3>予約</h3><span class="sub">受注ごとの仮押さえ</span></div><div class="card-b rlist">' + resRows + "</div></div>" +
@@ -1182,8 +1238,11 @@
     if (d.type === "customer") inner = customerDrawer(d.no);
     if (d.type === "exp-new") inner = expNewDrawer(d);
     if (d.type === "leave-new") inner = leaveDrawer(d);
+    if (d.type === "inbox") inner = inboxDrawer(d);
+    if (d.type === "book") inner = bookDrawer(d);
+    if (d.type === "storeres") inner = storeResDrawer(d);
     if (!inner) return "";
-    return '<div class="overlay" data-act="drawer-close"></div><aside class="drawer' + (d.type === "exp-new" || d.type === "leave-new" ? " narrow" : "") + '" role="dialog" aria-modal="true">' + inner + "</aside>";
+    return '<div class="overlay" data-act="drawer-close"></div><aside class="drawer' + (d.type === "exp-new" || d.type === "leave-new" || d.type === "book" ? " narrow" : "") + '" role="dialog" aria-modal="true">' + inner + "</aside>";
   }
   var p3Acts = {
     "p3-filter": function (el) { state.p3[el.getAttribute("data-k")] = el.value; render(); },
@@ -1199,9 +1258,9 @@
     "order-next": function (el) {
       var o = orderOf(el.getAttribute("data-no")); if (!o) return;
       var next = P.stages[stageIdx(o.stage) + 1]; if (!next) return;
-      if (next === "成約" && !o.contractDate) o.contractDate = TODAY_S;
-      if (next === "確定" && !o.paid) o.paid = Math.round(o.amount * 0.3 / 1000) * 1000;
-      if (next === "完了") o.paid = o.amount;
+      if (next === ST_CONTRACT && !o.contractDate) o.contractDate = TODAY_S;
+      if (next === ST_SIZE && !o.paid) o.paid = Math.round(o.amount * 0.3 / 1000) * 1000;
+      if (next === ST_DONE) o.paid = o.amount;
       o.stage = next; o.checks = (P.checklists[next] || []).map(function () { return false; });
       o.history.push([TODAY_S, "ステージを「" + next + "」に変更"]);
       audit("受注のステージを「" + next + "」に（" + o.no + "）");
@@ -1240,7 +1299,7 @@
   // ======================================================================
   var X = window.EXT_DATA;
   var WD = "日月火水木金土";
-  var SHARE = { A: 0.42, B: 0.33, C: 0.25 };
+  var SHARE = { matsue: 0.34, izumo: 0.26, yonago: 0.23, tottori: 0.17 };
   function mdw(s) { var d = toDate(s); return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD.charAt(d.getDay()) + "）"; }
   function perm(page, role) { var p = X.perm[page]; return p ? p[role || state.role] || "none" : "none"; }
   function canEdit(page) { var p = perm(page); return p === "full" || p === "own"; }
@@ -1248,6 +1307,7 @@
   function approver() { return state.role === "exec" || state.role === "manager" || state.role === "accounting"; }
   function empOf(name) { for (var i = 0; i < X.employees.length; i++) if (X.employees[i].name === name) return X.employees[i]; return null; }
   function storeLabel(id) { return id ? storeName(id) : "本社"; }
+  function storeOf(id) { for (var i = 0; i < D.stores.length; i++) if (D.stores[i].id === id) return D.stores[i]; return {}; }
   function pill(text, tone) { return '<span class="pill ' + (tone || "mute") + '">' + esc(text) + "</span>"; }
   function badge(kind) {
     return kind === "opt" ? '<span class="nb opt">オプション</span>' : kind === "adv" ? '<span class="nb adv">発展機能</span>' : kind === "sep" ? '<span class="nb sep">別項目</span>' : "";
@@ -1281,8 +1341,463 @@
   };
   function scopeNote(kind, extra) { var n = NOTE[kind]; return '<div class="snote ' + kind + '"><b>' + esc(n[0]) + "</b>" + esc(n[1] + (extra || "")) + "</div>"; }
 
+  // ======================================================================
+  // ご予約（予約の受付・フェアとお食事）・お客様の声・いまの会社（ライブ）— 発展機能
+  // フェアの題名・中身・写真、式場の住所と営業時間、体験レポートは式場のサイトの公開情報（2026-10-08 に確認）。日付・空席・予約の数はサンプル
+  // ======================================================================
+  function holi(s) { return X.holidays[s] || ""; }
+  function storeClosedOn(d) { return d.getDay() === 2 && !holi(ymd(d)); } // 衣装店：毎週火曜（祝日は営業）
+  function venueClosedOn(d) { var w = d.getDay(); return (w === 2 || w === 3) && !holi(ymd(d)); } // 式場：火・水（祝日は営業）
+  function venueOf(id) { for (var i = 0; i < X.fairVenues.length; i++) if (X.fairVenues[i].id === id) return X.fairVenues[i]; return null; }
+  function fairOf(vid, fid) { var l = X.fairs[vid] || []; for (var i = 0; i < l.length; i++) if (l[i].id === fid) return l[i]; return null; }
+  function mealOf(id) { for (var i = 0; i < X.meals.length; i++) if (X.meals[i].id === id) return X.meals[i]; return null; }
+  function endTime(t, mins) { var p = t.split(":"), m = +p[0] * 60 + +p[1] + mins; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); }
+  function openDay(n, venue) { var d = addDays(TODAY, n); for (var k = 0; k < 7 && (venue ? venueClosedOn(d) : storeClosedOn(d)); k++) d = addDays(d, 1); return ymd(d); }
+  function nextOpenAfter(s) { var d = addDays(toDate(s), 1); for (var k = 0; k < 7 && storeClosedOn(d); k++) d = addDays(d, 1); return ymd(d); }
+  var FAIR_DAYS = 14;
+  function fairSchedule() { // 今日から14日間の、会場ごとのフェア
+    if (fairSchedule.c) return fairSchedule.c;
+    var out = [];
+    for (var i = 0; i < FAIR_DAYS; i++) {
+      var d = addDays(TODAY, i), s = ymd(d);
+      X.fairVenues.forEach(function (v) {
+        if (venueClosedOn(d)) return;
+        var plan = X.fairPlan[v.id], ids = holi(s) ? plan.hol : plan[d.getDay()];
+        (ids || []).forEach(function (spec) {
+          var alt = spec.split("|"), f = fairOf(v.id, alt[Math.floor(i / 7) % alt.length]);
+          if (f) out.push({ v: v, f: f, date: s, i: i });
+        });
+      });
+    }
+    return (fairSchedule.c = out);
+  }
+  function fairDateFor(vid, fid) { var l = fairSchedule().filter(function (x) { return x.v.id === vid && x.f.id === fid && x.i > 0; }); return l.length ? l[0].date : null; }
+  // 時間枠の予約の数：見本の数（日付と枠で決まる）＋このデモで入った予約
+  function slotKey(kind, vid, id, date, t) { return [kind, vid, id, date, t].join("|"); }
+  function slotSeed(key, cap, busy) {
+    var h = 7; for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+    var r = rng(h)(), n = r < (busy ? 0.35 : 0.6) ? 0 : r < (busy ? 0.8 : 0.9) ? 1 : 2;
+    return Math.min(cap, n);
+  }
+  function slotCount(kind, vid, id, date, t, cap) {
+    var key = slotKey(kind, vid, id, date, t), d = toDate(date), busy = d.getDay() === 0 || d.getDay() === 6 || !!holi(date);
+    return Math.min(cap, slotSeed(key, cap, busy) + ((state.ext.fairBook || {})[key] || []).length);
+  }
+  function slotState(n, cap) { return n >= cap ? ["×", "満席", "full"] : cap - n <= 1 ? ["△", "残り" + (cap - n) + "組", "few"] : ["○", "空席あり", "ok"]; }
+  function addBooking(kind, vid, id, date, t, ref) { var key = slotKey(kind, vid, id, date, t); state.ext.fairBook[key] = (state.ext.fairBook[key] || []).concat([ref]); }
+
+  // ---------- 予約の受付 ----------
+  var CH = {
+    store: { name: "ご来店予約", ico: "cal", tone: "gold", src: "御社サイト（yashiro-dress.com）のご来店予約" },
+    fair: { name: "ブライダルフェア予約", ico: "ring", tone: "ver", src: "式場のブライダルフェア予約" },
+    tour: { name: "見学予約", ico: "pin", tone: "ver", src: "式場の見学予約" },
+    request: { name: "資料請求", ico: "mail", tone: "info", src: "式場の資料請求" },
+    contact: { name: "お問い合わせ", ico: "chat", tone: "mute", src: "お問い合わせ" },
+    meal: { name: "お食事のご予約", ico: "meal", tone: "teal", src: "お食事のご予約（例）" }
+  };
+  function resolveItem(src, atIso) {
+    var x = JSON.parse(JSON.stringify(src)); x.at = atIso;
+    if (x.ch === "store") x.prefs = (x.prefs || []).map(function (p) { return [openDay(p[0]), p[1]]; });
+    if (x.ch === "fair") x.date = fairDateFor(x.venue, x.fair) || openDay(3, true);
+    if (x.ch === "tour" || x.ch === "meal") { x.date = openDay(x.d || 3, true); x.time = x.t; delete x.d; delete x.t; }
+    delete x.m;
+    return x;
+  }
+  function seedBookings(e) {
+    e.appts = seedAppts(); e.fairBook = {}; e.voice = {};
+    e.inbox = X.inbox.map(function (src) { return resolveItem(src, new Date(Date.now() + src.m * 60000).toISOString()); });
+    e.inbox.forEach(function (x) {
+      if (x.ch === "fair") { var k = slotKey("fair", x.venue, x.fair, x.date, x.slot); e.fairBook[k] = (e.fairBook[k] || []).concat([x.id]); }
+      if (x.st === "done" && (x.ch === "fair" || x.ch === "tour" || x.ch === "meal")) {
+        var v = venueOf(x.venue);
+        e.appts.push({ id: "a" + x.id, date: x.date, t: x.ch === "fair" ? x.slot : x.time, type: x.ch, venue: x.venue, store: v ? v.store : null, name: x.name, inbox: x.id, staff: "" });
+      }
+    });
+  }
+  function itemOf(id) { for (var i = 0; i < state.ext.inbox.length; i++) if (state.ext.inbox[i].id === id) return state.ext.inbox[i]; return null; }
+  function itemStore(x) { if (x.store) return x.store; var v = venueOf(x.venue); return v ? v.store : null; }
+  function itemWhere(x) { return x.store ? storeName(x.store) : (venueOf(x.venue) || {}).short || ""; }
+  function inboxList() {
+    return state.ext.inbox.filter(function (x) { return mine(itemStore(x)); }).sort(function (a, b) {
+      if ((a.st === "new") !== (b.st === "new")) return a.st === "new" ? -1 : 1;
+      return a.at < b.at ? 1 : a.at > b.at ? -1 : 0;
+    });
+  }
+  function inboxNew() { return inboxList().filter(function (x) { return x.st === "new"; }); }
+  function agoLabel(iso) { var m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 1 ? "たった今" : m < 60 ? m + "分前" : m < 1440 ? Math.floor(m / 60) + "時間前" : Math.floor(m / 1440) + "日前"; }
+  function itemSummary(x) {
+    if (x.ch === "store") return (x.wants || []).join("・") + " · 第1希望 " + mdw(x.prefs[0][0]) + " " + x.prefs[0][1] + "〜";
+    if (x.ch === "fair") { var f = fairOf(x.venue, x.fair); return (f ? f.title : "") + " · " + mdw(x.date) + " " + x.slot + "〜 · " + x.people + "名"; }
+    if (x.ch === "tour") return "式場の見学 · " + mdw(x.date) + " " + x.time + "〜 · " + x.people + "名";
+    if (x.ch === "meal") { var m = mealOf(x.meal); return (m ? m.title : "お食事") + " · " + mdw(x.date) + " " + x.time + "〜 · " + x.people + "名"; }
+    if (x.ch === "request") return x.items;
+    return x.msg;
+  }
+  function nextStep(x) {
+    if (x.st === "done") return (x.ch === "request" ? "発送済み" : x.ch === "contact" ? "回答済み" : "確認済み") + (x.by ? "（" + x.by + "）" : "");
+    if (x.st === "hold") return "お電話で日時を調整中";
+    return { store: "希望の日時を選んで予約を確定 → 確認のメール", fair: "予約を確かめる → 確認のメール。近くの衣装店でのご試着もご案内", tour: "見学の予約を確定 → 確認のメール",
+      request: "資料を発送して「発送済み」にする", contact: "回答して「回答済み」にする", meal: "お食事の予約を確定 → 確認のメール" }[x.ch];
+  }
+  function stPillIn(x) { return x.st === "new" ? pill("新着", "bad") : x.st === "hold" ? pill("お電話で調整中", "warn") : pill(x.ch === "request" ? "発送済み" : x.ch === "contact" ? "回答済み" : "確認済み", "good"); }
+  function srcOf(x) { return /Instagram/.test(x.via) ? "Instagram の DM（@yashiro_wedding）" : x.via === "LINE" ? "公式LINE" : x.via === "お電話" ? "お電話（スタッフが入力）" : x.via === "ご来館" ? "ご来館（スタッフが入力）" : CH[x.ch].src; }
+  function chTag(ch) { var c = CH[ch]; return '<span class="tag t-' + c.tone + ' ict">' + icon(c.ico) + esc(c.name) + "</span>"; }
+  function phoneRule(date) { var dd = dayDiff(date, TODAY_S), w = toDate(date).getDay(); return dd <= 1 || w === 3 ? "当日・翌日・水曜日のご予約は、お電話で確かめてから確定します（御社サイトのご予約フォームの決まり）。" : ""; }
+  function isToday(iso) { return ymd(new Date(iso)) === TODAY_S; }
+  function viewInbox() {
+    var all = inboxList(), tab = state.ui.inboxTab, open = all.filter(function (x) { return x.st !== "done"; }), nw = all.filter(function (x) { return x.st === "new"; });
+    var list = all.filter(function (x) { return tab === "all" || (tab === "new" ? x.st !== "done" : tab === "store" ? !!x.store : !x.store); });
+    var kpis = '<div class="kpis k4">' + kpi("新着（まだ確認していない）", nw.length + "件", nw.length ? "いちばん古いのは " + agoLabel(nw[nw.length - 1].at) : "ありません", nw.length ? "dn" : "") +
+      kpi("今日の受付", all.filter(function (x) { return isToday(x.at); }).length + "件", "Web・LINE・お電話") + kpi("確認までの時間", "平均 18分", "今月（サンプル）") +
+      kpi("フェアのご予約", all.filter(function (x) { return x.ch === "fair"; }).length + "件", "ヴィラ・ノッツェの2会場") + "</div>";
+    var tabs = '<div class="tabs">' + [["all", "すべて", all.length], ["new", "新着・調整中", open.length], ["store", "衣装店", all.filter(function (x) { return x.store; }).length], ["venue", "式場", all.filter(function (x) { return !x.store; }).length]].map(function (t) {
+      return '<button type="button" data-act="inbox-tab" data-v="' + t[0] + '" class="' + (tab === t[0] ? "on" : "") + '">' + t[1] + ' <span class="tcount">' + t[2] + "</span></button>";
+    }).join("") + "</div>";
+    var bar = '<div class="doc-bar">御社サイトのご来店予約と、ヴィラ・ノッツェのフェア予約・見学予約・資料請求・お問い合わせを、1か所で受け付けます。<span class="sp"></span>' +
+      (canEdit("inbox") ? '<button class="btn" data-act="inbox-sim">' + icon("live") + "Web から予約が入ったとき（デモ）</button>" : "") + "</div>";
+    var rows = list.map(function (x) {
+      return '<button type="button" class="ibx' + (x.st === "new" ? " new" : x.st === "hold" ? " hold" : "") + '" data-act="inbox-open" data-id="' + x.id + '">' +
+        '<span class="ibx-ic t-' + CH[x.ch].tone + '">' + icon(CH[x.ch].ico) + "</span>" +
+        '<span class="ibx-m"><span class="ibx-top">' + chTag(x.ch) + '<span class="ibx-where">' + esc(itemWhere(x)) + '</span><span class="ibx-at">' + esc(agoLabel(x.at) + " · " + x.via) + "</span></span>" +
+        "<b>" + esc(sama(x.name)) + "</b><small>" + esc(itemSummary(x)) + '</small><span class="ibx-next">' + icon("arrow") + esc(nextStep(x)) + "</span></span>" +
+        '<span class="ibx-st">' + stPillIn(x) + (x.st !== "done" ? '<span class="btn sm pri">確認する</span>' : "") + "</span></button>";
+    }).join("") || '<p class="note-sm" style="padding:18px">該当する受付はありません。</p>';
+    return scopeNote("adv", "予約やお問い合わせが入ると、ここに「新着」で届き、上のベルとスマートフォンにもお知らせします。今お使いの予約の仕組み（式場の予約ページなど）とのつなぎ方は、打合せで伺います。") +
+      kpis + '<div class="card">' + tabs + bar + '<div class="ibx-list">' + rows + "</div></div>";
+  }
+  function inboxDrawer(d) {
+    var x = itemOf(d.id); if (!x) return "";
+    var c = CH[x.ch], v = venueOf(x.venue), edit = canEdit("inbox"), rows = [];
+    rows.push(["受け付けた日時", timeLabel(x.at) + "（" + agoLabel(x.at) + " · " + x.via + "）"]);
+    rows.push(["お名前", sama(x.name) + (x.kana ? "（" + x.kana + "）" : "")]);
+    if (x.tel) rows.push(["電話番号", x.tel]);
+    if (x.mail) rows.push(["メールアドレス", x.mail]);
+    if (x.store) rows.push(["ご来店店舗", storeName(x.store)]);
+    if (v) rows.push(["式場", v.name]);
+    if (x.ch === "store") { rows.push(["ご希望衣装", (x.wants || []).join("・")]); rows.push(["挙式日・会場（学校）・ご使用日など", x.detail || "—"]); }
+    if (x.ch === "fair") { var f = fairOf(x.venue, x.fair); rows.push(["フェア", f ? f.title : ""]); rows.push(["日時", mdw(x.date) + " " + x.slot + "〜" + endTime(x.slot, 120) + "（120分・無料）"]); rows.push(["人数", x.people + "名"]); }
+    if (x.ch === "tour") { rows.push(["見学の日時", mdw(x.date) + " " + x.time + "〜"]); rows.push(["人数", x.people + "名"]); }
+    if (x.ch === "meal") { var m = mealOf(x.meal); rows.push(["お食事", m ? m.title : ""]); rows.push(["日時", mdw(x.date) + " " + x.time + "〜"]); rows.push(["人数", x.people + "名"]); }
+    if (x.ch === "request") rows.push(["ご希望の資料", x.items]);
+    if (x.ch === "contact") rows.push(["お問い合わせの内容", x.msg]);
+    if (x.note) rows.push(["ご要望・メモ", x.note]);
+    if (x.st === "done" && x.ch === "contact" && x.reply) rows.push(["回答", x.reply]);
+    var detail = '<div class="card"><div class="card-h"><h3>受け付けた内容</h3><span class="sub">' + esc(srcOf(x)) + '</span></div><div class="tbl-wrap"><table class="sumtbl"><tbody>' +
+      rows.map(function (r) { return "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td></tr>"; }).join("") + "</tbody></table></div></div>";
+    var guide = '<div class="next-box' + (x.st === "done" ? " done" : "") + '"><span class="nb-ic">' + icon(x.st === "done" ? "check" : "arrow") + "</span><div><b>" + (x.st === "done" ? "このご予約は対応済みです" : "次にやること") + "</b><p>" + esc(nextStep(x)) + "</p></div></div>";
+    var action = "";
+    if (x.st !== "done" && edit) {
+      if (x.ch === "store") {
+        var pick = d.pick == null ? 0 : d.pick, staffNow = d.staff || staffOf(x.store)[0];
+        var cards = x.prefs.map(function (p, i) {
+          var n = state.ext.appts.filter(function (a) { return a.store === x.store && a.date === p[0] && a.t === p[1]; }).length, s2 = storeClosedOn(toDate(p[0])) ? ["−", "定休日", "full"] : slotState(n, 2);
+          return '<button type="button" class="pref' + (i === pick ? " on" : "") + (s2[2] === "full" ? " full" : "") + '" data-act="in-pick" data-i="' + i + '"><span class="pn">第' + (i + 1) + "希望</span><b>" + esc(mdw(p[0])) + " " + p[1] + "〜" + endTime(p[1], 60) + "</b>" +
+            '<span class="ps ' + s2[2] + '">' + s2[0] + " " + s2[1] + "</span>" + (phoneRule(p[0]) ? '<span class="pr">' + icon("phone") + "お電話で確認</span>" : "") + "</button>";
+        }).join("");
+        action = '<div class="card"><div class="card-h"><h3>日時を選んで確定する</h3><span class="sub">1時間枠 · 1枠2組まで（サンプル）</span></div><div class="card-b stack"><div class="prefs">' + cards + "</div>" +
+          '<label class="field-label">担当<select data-inf="staff">' + staffOf(x.store).map(function (n) { return "<option" + (n === staffNow ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("") + "</select></label>" +
+          (phoneRule(x.prefs[pick][0]) ? '<p class="lc warn">' + esc(phoneRule(x.prefs[pick][0])) + "</p>" : "") +
+          '<div class="form-actions"><button class="btn pri big" data-act="in-confirm" data-id="' + x.id + '">' + icon("check") + "この日時で予約を確定する</button>" +
+          '<button class="btn" data-act="in-hold" data-id="' + x.id + '">' + icon("phone") + "お電話で調整する</button></div>" +
+          '<p class="note-sm">確定すると、来店予約の予定表と受注（ご来店予約のステージ）に入り、お客様に確認のメールを送ります（デモでは送りません）。</p></div></div>';
+      } else if (x.ch === "fair" || x.ch === "tour" || x.ch === "meal") {
+        var near = v ? storeName(v.store) : "";
+        action = '<div class="card"><div class="card-b stack">' + (x.ch === "fair" ? '<label class="ckline"><input type="checkbox" data-inf="dress"' + (d.dress === false ? "" : " checked") + ">近くの衣装店（" + esc(near) + "）でのドレスのご試着も予約する（フェアの次の営業日 14:00）</label>" : "") +
+          '<div class="form-actions"><button class="btn pri big" data-act="in-confirm" data-id="' + x.id + '">' + icon("check") + (x.ch === "fair" ? "予約を確認する" : x.ch === "tour" ? "見学の予約を確定する" : "お食事の予約を確定する") + "</button>" +
+          '<button class="btn" data-act="in-hold" data-id="' + x.id + '">' + icon("phone") + "お電話で確かめる</button></div>" +
+          '<p class="note-sm">確定すると、来店予約の予定表に入り、お客様に確認のメールを送ります（デモでは送りません）。</p></div></div>';
+      } else if (x.ch === "request") {
+        action = '<div class="form-actions"><button class="btn pri big" data-act="in-confirm" data-id="' + x.id + '">' + icon("mail") + "資料を発送して、発送済みにする</button></div>";
+      } else {
+        action = '<div class="card"><div class="card-h"><h3>回答</h3>' + (x.reply ? '<span class="sub">回答の例が入っています</span>' : "") + '</div><div class="card-b stack"><textarea data-inf="reply">' + esc(d.reply != null ? d.reply : x.reply || "") + "</textarea>" +
+          '<div class="form-actions"><button class="btn pri big" data-act="in-confirm" data-id="' + x.id + '">' + icon("send") + "回答を送って、回答済みにする</button></div></div></div>";
+      }
+    }
+    var links = [];
+    if (x.st === "done" && state.ext.appts.some(function (a) { return a.inbox === x.id; })) links.push('<button class="btn" data-act="cal-goto">' + icon("cal") + "来店予約で見る</button>");
+    if (x.order && orderOf(x.order)) links.push('<button class="btn" data-act="order-open" data-no="' + x.order + '">' + icon("list") + "受注を開く（" + x.order + "）</button>");
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(c.name + " · " + itemWhere(x)) + "</div><h2>" + esc(sama(x.name)) + '</h2><div class="dh-tags">' + stPillIn(x) + chTag(x.ch) + '<span class="tag plain">' + esc(x.via) + "</span></div></div>" +
+      '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
+    return head + '<div class="drawer-b">' + guide + action + (links.length ? '<div class="form-actions" style="margin-top:0">' + links.join("") + "</div>" : "") + detail + "</div>";
+  }
+  function bizFromWants(w) {
+    w = w || [];
+    if (w.indexOf("振袖") >= 0) return "furisode"; if (w.indexOf("卒業式袴") >= 0) return "hakama"; if (w.indexOf("七五三") >= 0) return "shichigosan";
+    if (w.indexOf("白無垢") >= 0 || w.indexOf("色打掛") >= 0 || w.indexOf("紋付") >= 0) return "shrine";
+    return "bridal";
+  }
+  function newLead(o) { // 受付から受注を作る（ご来店予約のステージ）
+    var x = { no: nextNo(), customer: sama(o.customer).replace(/ 様$/, "様"), biz: o.biz, store: o.store, costumes: [], date: o.date || dayStr(200), dateTbd: !o.date, dateLabel: o.dateLabel || "", stage: ST_FIRST, amount: 0, paid: 0, staff: o.staff,
+      venue: o.venue || "", style: o.style || "", plan: o.plan || "", contractDate: null, source: o.source, checks: [true, false], req: noReq(), history: [[TODAY_S, "ご来店予約を受付（" + o.source + "）"]] };
+    state.orders.unshift(x);
+    return x;
+  }
+  function addAppt(a) { a.id = "a" + (state.ext.seq.a++); state.ext.appts.push(a); return a; }
+  function confirmItem(x, d) {
+    var v = venueOf(x.venue), msg = "";
+    if (x.ch === "store") {
+      var p = x.prefs[d.pick || 0], staff = d.staff || staffOf(x.store)[0];
+      var o = x.order ? orderOf(x.order) : null;
+      var when = parseWhen(x.detail), ven = parseVenue(x.detail);
+      if (!o) o = newLead({ customer: x.name, biz: bizFromWants(x.wants), store: x.store, staff: staff, source: x.via === "LINE" ? "公式LINE" : x.via === "お電話" ? "お電話" : /Instagram/.test(x.via) ? "Instagram" : "Web（ご来店予約）",
+        date: when ? when.date : null, dateLabel: when ? when.label : "", venue: ven ? ven.name : "", style: ven && ven.kind === "神前式" ? "神前式" : "" });
+      x.order = o.no;
+      addAppt({ date: p[0], t: p[1], type: "visit", order: o.no, staff: staff, store: x.store, inbox: x.id });
+      msg = mdw(p[0]) + " " + p[1] + "〜で予約を確定しました。来店予約と受注（" + o.no + "）に入りました" + (when ? "（お日取り " + when.label + (ven ? "・" + ven.name : "") + "）" : "") + "。";
+    } else if (x.ch === "fair" || x.ch === "tour" || x.ch === "meal") {
+      addAppt({ date: x.date, t: x.ch === "fair" ? x.slot : x.time, type: x.ch, venue: x.venue, store: v ? v.store : null, name: x.name, inbox: x.id, staff: "" });
+      msg = (x.ch === "fair" ? "フェアの予約" : x.ch === "tour" ? "見学の予約" : "お食事の予約") + "を確定しました。来店予約の予定表に入りました。";
+      if (x.ch === "fair" && d.dress !== false && v) {
+        var day = nextOpenAfter(x.date), sf = staffOf(v.store)[0];
+        var o2 = newLead({ customer: x.name, biz: "bridal", store: v.store, staff: sf, source: "ブライダルフェア（ヴィラ・ノッツェ）", venue: v.name });
+        x.order = o2.no;
+        addAppt({ date: day, t: "14:00", type: "fitting", order: o2.no, staff: sf, store: v.store, inbox: x.id });
+        msg += storeName(v.store) + "でのご試着（" + mdw(day) + " 14:00）も予約しました。";
+      }
+    } else if (x.ch === "request") msg = "資料を発送済みにしました。";
+    else { x.reply = d.reply != null ? d.reply : x.reply; msg = "回答を送り、回答済みにしました。"; }
+    x.st = "done"; x.by = U().name; x.doneAt = new Date().toISOString();
+    audit(CH[x.ch].name + "を確認（" + sama(x.name) + " · " + itemWhere(x) + "）");
+    return msg;
+  }
+  function safeToRender() { var a = document.activeElement; return !state.p3.drawer && !state.ui.pal && !state.ui.sheet && !(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)); }
+  function simulateArrival(auto) {
+    var pool = X.inboxPool, src = pool[state.ext.seq.pool % pool.length];
+    state.ext.seq.pool++;
+    var x = resolveItem(src, new Date().toISOString());
+    x.id = "in" + (state.ext.seq.inb++); x.st = "new";
+    if (x.ch === "fair") addBooking("fair", x.venue, x.fair, x.date, x.slot, x.id);
+    if (x.ch === "meal") addBooking("meal", x.venue, x.meal, x.date, x.time, x.id);
+    state.ext.inbox.push(x);
+    save();
+    if (!auto || safeToRender()) render();
+    push(x);
+  }
+  // スマートフォンの通知のような知らせ（#push は描画の外にあるので、画面を描き直しても消えない）
+  var pushEl = document.getElementById("push");
+  function push(x) {
+    if (!pushEl || !state.authed) return;
+    var c = CH[x.ch];
+    pushEl.innerHTML = '<div class="push-in"><span class="pi t-' + c.tone + '">' + icon(c.ico) + '</span><div class="pt"><span class="pk"><i class="live-dot"></i>いま届きました</span><b>' + esc(c.name + " · " + itemWhere(x)) + "</b><small>" + esc(sama(x.name) + " · " + itemSummary(x)) + "</small></div>" +
+      '<div class="pa"><button type="button" class="btn sm pri" data-act="push-open" data-id="' + x.id + '">確認する</button><button type="button" class="iconbtn" data-act="push-close" aria-label="閉じる">' + icon("x") + "</button></div></div>";
+    pushEl.classList.remove("show"); void pushEl.offsetWidth; pushEl.classList.add("show");
+    clearTimeout(push.t); push.t = setTimeout(function () { pushEl.classList.remove("show"); }, 9000);
+  }
+  // 役員のホームを開いたままにすると、予約が届く（このページを開いている間に3件まで）
+  function liveTick() {
+    if (!state.authed || route() !== "home" || state.role !== "exec" || document.hidden) return;
+    if (state.ui.liveN >= 3 || !safeToRender()) return;
+    state.ui.liveN++;
+    simulateArrival(true);
+  }
+  setInterval(liveTick, 40000);
+
+  // ---------- フェア・お食事 ----------
+  function slotRows(kind, v, item, date, mins, cap, edit) {
+    var now = pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
+    return item.slots.map(function (t) {
+      var n = slotCount(kind, v.id, item.id, date, t, cap), s = slotState(n, cap), past = date === TODAY_S && t <= now;
+      return '<div class="slotrow ' + s[2] + '"><span class="tr">' + t + "〜" + endTime(t, mins) + '</span><span class="ss ' + s[2] + '"><i>' + s[0] + "</i>" + s[1] + '</span><span class="bk">予約 ' + n + " / " + cap + "組</span>" +
+        (edit && s[2] !== "full" && !past ? '<button class="btn sm pri" data-act="book-open" data-k="' + kind + '" data-v="' + v.id + '" data-f="' + item.id + '" data-d="' + date + '" data-t="' + t + '">予約する</button>'
+          : '<span class="btn sm dis">' + (past ? "受付終了" : s[2] === "full" ? "満席" : "閲覧のみ") + "</span>") + "</div>";
+    }).join("");
+  }
+  function fairCard(v, f, date) {
+    return '<article class="fcard"><div class="fimg" style="background-image:url(\'' + f.img + '\')">' + (f.pick ? '<span class="pickb on-img">イチオシ</span>' : "") + "</div>" +
+      '<div class="fbody"><div class="fmeta"><span>' + icon("cal") + esc(mdw(date)) + '</span><span>所要時間 120分</span><span class="free">無料</span>' + (f.online ? '<span class="tag t-info">オンライン</span>' : "") + "</div>" +
+      "<h3>" + esc(f.title) + "</h3><p>" + esc(f.desc) + '</p><div class="chips">' + f.items.map(function (i) { return '<span class="chip static">' + esc(i) + "</span>"; }).join("") + "</div>" +
+      (f.perks ? '<ul class="perks">' + f.perks.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + "</ul>" : "") +
+      '<div class="slots">' + slotRows("fair", v, f, date, 120, f.cap || 2, canEdit("fairs")) + "</div></div></article>";
+  }
+  function mealCard(v, m, date) {
+    return '<article class="fcard"><div class="fimg" style="background-image:url(\'' + m.img + '\')"><span class="pickb on-img">例</span></div><div class="fbody"><div class="fmeta"><span>' + icon("cal") + esc(mdw(date)) + "</span><span>" + esc(m.people) + "</span></div>" +
+      "<h3>" + esc(m.title) + "</h3><p>" + esc(m.desc) + '</p><div class="slots">' + slotRows("meal", v, m, date, 120, m.cap || 1, canEdit("fairs")) + "</div></div></article>";
+  }
+  function viewFairs() {
+    var tab = state.ui.fairTab, v = venueOf(state.ui.fairVenue) || X.fairVenues[0], sched = fairSchedule(), wk = sched.filter(function (x) { return x.i < 7; });
+    var booked = 0, open = 0;
+    wk.forEach(function (x) { var cap = x.f.cap || 2; x.f.slots.forEach(function (t) { var n = slotCount("fair", x.v.id, x.f.id, x.date, t, cap); booked += n; open += cap - n; }); });
+    var toDress = state.orders.filter(function (o) { return /ブライダルフェア/.test(o.source) && o.stage !== ST_DONE; }).length;
+    var kpis = '<div class="kpis k4">' + kpi("今週のフェア", wk.length + "回", "2会場 · 今日から7日間") + kpi("フェアのご予約", booked + "組", "今週の合計（サンプル）") + kpi("空いている枠", open + "組分", "○・△の枠") + kpi("フェアから衣装のご試着へ", toDress + "件", "受注（ご来店予約〜）") + "</div>";
+    var vtabs = '<div class="vtabs">' + X.fairVenues.map(function (x) {
+      return '<button type="button" class="vtb' + (x.id === v.id ? " on" : "") + '" data-act="fair-venue" data-v="' + x.id + '"><span class="vimg" style="background-image:url(\'' + x.img + '\')"></span><span class="vtx"><b>' + esc(x.short) + "</b><small>" + esc(x.name) + "</small></span></button>";
+    }).join("") + "</div>";
+    var info = '<div class="vinfo">' + (v.addr ? "<span>" + icon("pin") + esc(v.addr) + "</span>" : "") + "<span>" + icon("phone") + esc(v.tel) + "</span><span>" + icon("cal") + esc(v.hours) + "</span><span>定休日 " + esc(v.closed) + "</span>" +
+      '<span class="sp"></span><a class="extlink" href="' + esc(v.url) + '" target="_blank" rel="noopener noreferrer">今のフェア予約ページ（式場）' + icon("ext") + "</a></div>";
+    var seg = '<div class="seg big" role="group" aria-label="予約の種類"><button type="button" data-act="fair-tab" data-v="fair" class="' + (tab === "fair" ? "on" : "") + '">' + icon("ring") + "ブライダルフェア</button>" +
+      '<button type="button" data-act="fair-tab" data-v="meal" class="' + (tab === "meal" ? "on" : "") + '">' + icon("meal") + "お食事のご予約（例）</button></div>";
+    var vs = sched.filter(function (x) { return x.v.id === v.id; }), days = [];
+    for (var i = 0; i < FAIR_DAYS; i++) days.push(addDays(TODAY, i));
+    var sel = state.ui.fairDate;
+    if (!sel || !days.some(function (d) { return ymd(d) === sel; }) || venueClosedOn(toDate(sel))) sel = tab === "fair" && vs[0] ? vs[0].date : openDay(0, true);
+    var strip = '<div class="dstrip">' + days.map(function (d) {
+      var s = ymd(d), closed = venueClosedOn(d), n = vs.filter(function (x) { return x.date === s; }).length;
+      return '<button type="button" class="ds' + (s === sel ? " on" : "") + (closed ? " closed" : "") + (holi(s) ? " hol" : "") + (d.getDay() === 0 ? " sun" : d.getDay() === 6 ? " sat" : "") + '" data-act="fair-date" data-d="' + s + '"' + (closed ? " disabled" : "") + ">" +
+        '<span class="m">' + (d.getMonth() + 1) + "/" + d.getDate() + '</span><span class="w">' + WD.charAt(d.getDay()) + (holi(s) ? "・祝" : "") + '</span><span class="n">' + (closed ? "定休" : tab === "fair" ? (n ? n + "件" : "—") : "○") + "</span></button>";
+    }).join("") + "</div>";
+    var body = tab === "fair" ? vs.filter(function (x) { return x.date === sel; }).map(function (x) { return fairCard(x.v, x.f, x.date); }).join("") || '<div class="notice">この日のフェアはありません。</div>'
+      : X.meals.filter(function (m) { return m.venue === v.id; }).map(function (m) { return mealCard(v, m, sel); }).join("") || '<div class="notice">この会場のお食事の例はありません。</div>';
+    return scopeNote("adv", "フェアの名前・中身・写真は、式場のサイトとフェアの予約ページから。日付・空席・予約の数はサンプルです。お食事のご予約は例として示しています（今お使いの受付にあるかは、打合せで伺います）。") +
+      kpis + '<div class="card fair-wrap">' + vtabs + info + '<div class="fair-bar">' + seg + '<span class="sp"></span><span class="note-sm">' + esc(mdw(sel)) + (holi(sel) ? "（" + esc(holi(sel)) + "）" : "") + "</span></div>" + strip + "</div>" + '<div class="fairs">' + body + "</div>";
+  }
+  function bkField(label, key, val, ph, req) { return '<div class="field"><label>' + esc(label) + (req ? '<span class="req">必須</span>' : "") + '</label><input type="text" data-bk="' + key + '" value="' + esc(val || "") + '" placeholder="' + esc(ph || "") + '"></div>'; }
+  function bookDrawer(d) {
+    var dr = d.draft, v = venueOf(dr.venue), it = dr.kind === "fair" ? fairOf(dr.venue, dr.item) : mealOf(dr.item);
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc((dr.kind === "fair" ? "ブライダルフェア予約" : "お食事のご予約（例）") + " · " + v.short) + "</div><h2>" + esc(it.title) + "</h2>" +
+      '<div class="dh-tags"><span class="tag gold ict">' + icon("cal") + esc(mdw(dr.date) + " " + dr.t + "〜" + endTime(dr.t, 120)) + "</span>" + (dr.kind === "fair" ? '<span class="tag plain">120分 · 無料</span>' : "") + "</div></div>" +
+      '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
+    var via = ["お電話", "ご来館", "LINE"].map(function (x) { return '<button type="button" class="chip' + (dr.via === x ? " on" : "") + '" data-act="bk-via" data-v="' + x + '">' + x + "</button>"; }).join("");
+    var form = '<div class="card"><div class="card-b stack"><div class="form-grid">' +
+      bkField("お名前", "name", dr.name, "例：三浦 遥", true) + bkField("ふりがな", "kana", dr.kana, "例：みうら はるか") + bkField("電話番号", "tel", dr.tel, "例：090-0000-0000", true) + bkField("メールアドレス", "mail", dr.mail, "例：name@example.com") +
+      '<div class="field"><label>人数</label><select data-bk="people">' + [1, 2, 3, 4, 6, 8, 10, 12].map(function (n) { return '<option value="' + n + '"' + (+dr.people === n ? " selected" : "") + ">" + n + "名</option>"; }).join("") + "</select></div>" +
+      '<div class="field"><span class="label">受付の方法</span><div class="chips">' + via + "</div></div></div>" +
+      '<div class="field"><label>ご要望・メモ</label><input type="text" data-bk="note" value="' + esc(dr.note) + '" placeholder="' + (dr.kind === "fair" ? "例：出雲大社での挙式を考えています" : "例：両家の顔合わせ。甲殻類のアレルギーあり") + '"></div>' +
+      (dr.kind === "fair" ? '<label class="ckline"><input type="checkbox" data-bk="dress"' + (dr.dress ? " checked" : "") + ">近くの衣装店（" + esc(storeName(v.store)) + "）でのドレスのご試着も予約する</label>" : "") + "</div></div>";
+    return head + '<div class="drawer-b">' + form + '<div class="guide"><b>登録すると</b>' + (dr.kind === "fair" ? "フェアの予約に入り、来店予約の予定表と「予約の受付」に記録されます。ご試着も予約すると、" + esc(storeName(v.store)) + "の予定と受注（ご来店予約）に入ります。"
+      : "お食事の予約に入り、来店予約の予定表と「予約の受付」に記録されます。") + "</div>" +
+      '<div class="wfoot"><button class="btn" data-act="drawer-close">キャンセル</button><button class="btn pri" data-act="bk-save">予約を登録する</button></div></div>';
+  }
+  function srField(label, key, val, ph, req) { return '<div class="field"><label>' + esc(label) + (req ? '<span class="req">必須</span>' : "") + '</label><input type="text" data-sr="' + key + '" value="' + esc(val || "") + '" placeholder="' + esc(ph || "") + '"></div>'; }
+  function storeResDrawer(d) {
+    var dr = d.draft, closed = storeClosedOn(toDate(dr.date));
+    var slots = X.storeSlots.map(function (t) {
+      var n = state.ext.appts.filter(function (a) { return a.store === dr.store && a.date === dr.date && a.t === t; }).length, s2 = closed ? ["−", "定休日", "full"] : slotState(n, 2);
+      return '<button type="button" class="slot ' + s2[2] + (dr.t === t ? " on" : "") + '" data-act="sr-slot" data-t="' + t + '"' + (s2[2] === "full" ? " disabled" : "") + "><b>" + t + "〜" + endTime(t, 60) + "</b><span>" + s2[0] + " " + s2[1] + "</span></button>";
+    }).join("");
+    var wants = X.wants.map(function (w) { return '<button type="button" class="chip' + (dr.wants.indexOf(w) >= 0 ? " on" : "") + '" data-act="sr-want" data-v="' + esc(w) + '">' + esc(w) + "</button>"; }).join("");
+    var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">来店予約</div><h2>ご来店予約を受ける</h2><div class="dh-tags"><span class="tag plain">御社サイトのご予約フォームと同じ項目</span></div></div>' +
+      '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
+    return head + '<div class="drawer-b"><div class="card"><div class="card-b stack">' +
+      '<div class="field"><span class="label">ご希望衣装（複数可）</span><div class="chips">' + wants + "</div></div>" +
+      '<div class="form-grid"><div class="field"><label>ご来店店舗</label><select data-sr="store"' + (U().store ? " disabled" : "") + ">" + D.stores.map(function (s) { return '<option value="' + s.id + '"' + (s.id === dr.store ? " selected" : "") + ">" + esc(s.name) + "</option>"; }).join("") + "</select></div>" +
+      '<div class="field"><label>ご来店日</label><input type="date" data-sr="date" value="' + esc(dr.date) + '" min="' + TODAY_S + '"></div></div>' +
+      '<div class="field"><span class="label">時間（1時間枠 · 1枠2組まで）' + (closed ? "　定休日（火曜。祝日は営業）です" : "") + '</span><div class="slotgrid">' + slots + "</div>" + (phoneRule(dr.date) ? '<p class="lc warn">' + esc(phoneRule(dr.date)) + "</p>" : "") + "</div>" +
+      '<div class="form-grid">' + srField("お名前", "name", dr.name, "例：青山 美咲", true) + srField("ふりがな", "kana", dr.kana, "例：あおやま みさき") + srField("電話番号", "tel", dr.tel, "例：090-0000-0000", true) +
+      '<div class="field"><label>担当</label><select data-sr="staff">' + staffOf(dr.store).map(function (n) { return "<option" + (n === dr.staff ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("") + "</select></div></div>" +
+      '<div class="field"><label>その他詳細（挙式日・会場（学校）・ご使用日など）</label><input type="text" data-sr="detail" value="' + esc(dr.detail) + '" placeholder="例：2027年5月 挙式予定・ヴィラ・ノッツェ レガール松江"></div>' +
+      "</div></div>" + '<div class="wfoot"><button class="btn" data-act="drawer-close">キャンセル</button><button class="btn pri" data-act="sr-save">予約を登録する</button></div></div>';
+  }
+
+  // ---------- お客様の声 ----------
+  function voiceState(id) { return state.ext.voice[id] || {}; }
+  function voiceStaff() { var out = []; X.voices.forEach(function (v) { (v.staff || []).forEach(function (n) { if (out.indexOf(n) < 0) out.push(n); }); }); return out; }
+  function markStaff(text, v) { var h = esc(text); (v.staff || []).forEach(function (n) { h = h.split(esc(n)).join("<mark>" + esc(n) + "</mark>"); }); return h; }
+  function viewVoice() {
+    var tag = state.ui.voiceTag, vs = X.voices, counts = {};
+    vs.forEach(function (v) { v.tags.forEach(function (t) { counts[t] = (counts[t] || 0) + 1; }); });
+    var tags = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+    var list = vs.filter(function (v) { return tag === "all" || v.tags.indexOf(tag) >= 0; });
+    var shared = vs.filter(function (v) { return voiceState(v.id).shared; }).length;
+    var kpis = '<div class="kpis k4">' + kpi("集めた声", vs.length + "件", "体験レポート（コルティーレ出雲）") + kpi("スタッフへの感謝", (counts["スタッフ"] || 0) + "件", voiceStaff().join("・") + "の名前が出ています") +
+      kpi("料理をほめる声", (counts["料理"] || 0) + "件", "試食フェアの決め手にも") + kpi("従業員に共有", shared + "件", "全員のホームに出ます") + "</div>";
+    var summary = '<div class="card ai-card"><div class="card-h"><h3><span class="ai-ic">' + icon("spark") + "</span>選ばれた理由のまとめ</h3>" + badge("adv") + '<span class="sub">AI が声を読み、テーマごとに数えます（このデモは決まった計算）</span></div><div class="card-b"><div class="themes">' +
+      tags.map(function (t) { return '<button type="button" class="theme' + (tag === t ? " on" : "") + '" data-act="voice-tag" data-v="' + esc(t) + '"><b>' + esc(t) + "</b><span>" + counts[t] + '件</span><i style="width:' + Math.round(counts[t] / vs.length * 100) + '%"></i></button>'; }).join("") +
+      '</div><p class="ai-sum">「スタッフの対応」と「料理」が、選ばれる理由の上位です。出雲大社での挙式と披露宴を同じ日にできること、ホームページの分かりやすさも決め手になっています。</p></div></div>';
+    var chips = '<div class="chips"><button type="button" class="chip' + (tag === "all" ? " on" : "") + '" data-act="voice-tag" data-v="all">すべて ' + vs.length + "</button>" +
+      tags.map(function (t) { return '<button type="button" class="chip' + (tag === t ? " on" : "") + '" data-act="voice-tag" data-v="' + esc(t) + '">' + esc(t) + " " + counts[t] + "</button>"; }).join("") + "</div>";
+    var cards = list.map(function (v) {
+      var st = voiceState(v.id);
+      return '<article class="vcard' + (st.shared ? " shared" : "") + '"><div class="vhead"><span class="vwho">' + esc(v.who) + '</span><span class="vroom">' + esc(v.room + " · " + slashDate(v.date)) + "</span>" + (st.shared ? pill("共有済み", "good") : "") + "</div>" +
+        '<p class="vq">' + icon("quote") + "<span>" + markStaff(v.quote, v) + "</span></p>" +
+        '<dl class="vdl"><dt>決めたきっかけ</dt><dd>' + markStaff(v.why, v) + "</dd><dt>こだわり・印象に残ったこと</dt><dd>" + markStaff(v.memo, v) + "</dd></dl>" +
+        '<div class="vtags">' + v.tags.map(function (t) { return '<span class="chip static">' + esc(t) + "</span>"; }).join("") + "</div>" +
+        '<div class="vacts"><button type="button" class="btn sm' + (st.liked ? " liked" : "") + '" data-act="voice-like" data-id="' + v.id + '">' + icon("heart") + "ありがとう " + (st.likes || 0) + "</button>" +
+        (v.staff || []).map(function (n) { return '<button type="button" class="btn sm" data-act="voice-send" data-id="' + v.id + '" data-n="' + esc(n) + '">' + icon("send") + esc(n) + "に届ける</button>"; }).join("") +
+        (st.shared ? "" : '<button type="button" class="btn sm pri" data-act="voice-share" data-id="' + v.id + '">' + icon("share") + "従業員に共有</button>") +
+        '<a class="extlink" href="' + esc(v.url) + '" target="_blank" rel="noopener noreferrer">元の記事' + icon("ext") + "</a></div></article>";
+    }).join("");
+    var sources = '<div class="notice"><b>集める先</b><ul><li>式場のサイトの「体験レポート」（ここの6件。抜き書きは原文のまま・一部）</li><li>挙式のあとのアンケート・Google の口コミ・Instagram（例。つなぎ方は打合せで伺います）</li>' +
+      "<li>スタッフの名前が出た声は、ご本人と店長に届けます。共有した声は、全員のホームに出ます。</li></ul></div>";
+    var ig = X.insta, igCard = '<div class="card"><div class="card-h"><h3>' + icon("heart") + "Instagram</h3>" + '<span class="sub">@' + esc(ig.account) + "（マリエ・やしろ松江本店）· 投稿" + ig.posts + "件 · フォロワー" + ig.followers + "人（10月8日時点）</span>" +
+      '<span class="sp"></span><a class="extlink" href="https://www.instagram.com/' + esc(ig.account) + '/" target="_blank" rel="noopener noreferrer">Instagram を開く' + icon("ext") + "</a></div>" +
+      '<div class="card-b"><div class="igrow">' + ig.recent.map(function (c) { return '<iframe src="https://www.instagram.com/p/' + esc(c) + '/embed" loading="lazy" title="Instagram の投稿" scrolling="no"></iframe>'; }).join("") + "</div>" +
+      '<p class="note-sm">Instagram 公式の埋め込みで、いまの投稿をそのまま表示しています。投稿へのコメントや、DM での試着のご予約（投稿に「試着のご予約はインスタのDM、公式LINEから」とあります）も、「予約の受付」に集めるイメージです（つなぎ方は打合せで伺います）。</p></div></div>';
+    return scopeNote("adv", "お客様の声を集めて、従業員みんなで読めるようにします。良い声は励みに、改善の声は次のご案内に。") + kpis + summary + '<div class="filters">' + chips + "</div>" + '<div class="vgrid">' + cards + "</div>" + igCard + sources;
+  }
+
+  // ---------- いまの会社（役員のホーム）----------
+  function liveFeed() {
+    var ev = [], since = YEST_S;
+    state.ext.inbox.forEach(function (x) {
+      var t = new Date(x.at); if (ymd(t) < since) return;
+      ev.push({ t: t.getTime(), ico: CH[x.ch].ico, tone: CH[x.ch].tone, title: CH[x.ch].name + " · " + itemWhere(x), sub: sama(x.name) + " · " + itemSummary(x), act: 'data-act="inbox-open" data-id="' + x.id + '"', isNew: x.st === "new" });
+    });
+    state.ext.audit.forEach(function (a) { var t = new Date(a.t); if (ymd(t) >= since && !/ログイン/.test(a.what)) ev.push({ t: t.getTime(), ico: "check", tone: "mute", title: a.what, sub: a.who, act: "" }); });
+    state.ext.invoices.forEach(function (v) {
+      if (!v.paid || v.paid < since) return;
+      var o = orderOf(v.order), t = toDate(v.paid); t.setHours(10, 5, 0, 0);
+      ev.push({ t: t.getTime(), ico: "wallet", tone: "good", title: "入金 · " + (o ? storeName(o.store) : ""), sub: (o ? o.customer : "") + " · " + v.type + " " + yen(invAmount(v)), act: "" });
+    });
+    return ev.sort(function (a, b) { return b.t - a.t; }).slice(0, 9);
+  }
+  function liveCard() {
+    var ev = liveFeed();
+    return '<div class="card live-card"><div class="card-h"><h3><span class="live-dot"></span>いまの動き</h3><span class="sub">予約・入金・確定が入ると、ここに流れます</span><span class="sp"></span>' +
+      (canEdit("inbox") ? '<button class="linkbtn" data-act="inbox-sim">' + icon("live") + "予約が入ったとき（デモ）</button>" : "") + '</div><div class="feed">' +
+      ev.map(function (e) {
+        var d = new Date(e.t);
+        return '<button type="button" class="fe' + (e.isNew ? " new" : "") + '" ' + e.act + '><span class="fe-t">' + (ymd(d) === TODAY_S ? "" : "昨日 ") + pad(d.getHours()) + ":" + pad(d.getMinutes()) + "</span>" +
+          '<span class="fe-ic t-' + e.tone + '">' + icon(e.ico) + '</span><span class="fe-m"><b>' + esc(e.title) + "</b><small>" + esc(e.sub) + "</small></span>" + (e.isNew ? pill("新着", "bad") : "") + "</button>";
+      }).join("") + "</div></div>";
+  }
+  function siteTiles() {
+    var out = D.stores.map(function (s) {
+      var closed = storeClosedOn(TODAY), tdy = state.ext.appts.filter(function (a) { return a.store === s.id && a.date === TODAY_S && !a.venue; }).length;
+      var nw = state.ext.inbox.filter(function (x) { return x.st === "new" && x.store === s.id; }).length;
+      var ytd = sumRange("sekou", FY_START_S, YEST_S, s.id), ly = sumRange("sekou", ymd(addYears(FY_START, -1)), ymd(addYears(YEST, -1)), s.id), r = ratio(ytd.sales, ly.sales);
+      var staffN = X.employees.filter(function (e) { return e.store === s.id; }).length, off = state.ext.leave.filter(function (l) { var e = empOf(l.name); return e && e.store === s.id && l.date === TODAY_S && l.st === "承認済"; }).length;
+      return '<a class="site" href="#/calendar" data-act="site-go" data-s="' + s.id + '"><div class="site-h"><span class="site-ic">' + icon("hanger") + "</span><b>" + esc(s.name) + '</b><span class="site-st ' + (closed ? "off" : "on") + '">' + (closed ? "定休日" : "営業中") + "</span></div>" +
+        '<div class="site-n"><span><b>' + (closed ? "—" : tdy) + "</b>本日のご来店</span><span><b" + (nw ? ' class="dn"' : "") + ">" + nw + "</b>新着のご予約</span><span><b>" + (closed ? "—" : staffN - off) + "</b>出勤</span></div>" +
+        '<div class="site-f"><span>今期 ' + mil(ytd.sales) + '</span><span class="' + upDn(r) + '">' + arrow(r) + "前年比 " + pct(r) + "</span></div></a>";
+    });
+    X.fairVenues.forEach(function (v) {
+      var closed = venueClosedOn(TODAY), today = fairSchedule().filter(function (x) { return x.v.id === v.id && x.date === TODAY_S; }), wk = fairSchedule().filter(function (x) { return x.v.id === v.id && x.i < 7; }), bk = 0;
+      wk.forEach(function (x) { x.f.slots.forEach(function (t) { bk += slotCount("fair", v.id, x.f.id, x.date, t, x.f.cap || 2); }); });
+      var nw = state.ext.inbox.filter(function (x) { return x.st === "new" && x.venue === v.id; }).length;
+      out.push('<a class="site ven" href="#/fairs" data-act="fair-venue-go" data-v="' + v.id + '"><div class="site-h"><span class="site-ic">' + icon("ring") + "</span><b>" + esc(v.short) + '</b><span class="site-st ' + (closed ? "off" : "on") + '">' + (closed ? "定休日" : "営業中") + "</span></div>" +
+        '<div class="site-n"><span><b>' + (closed ? "—" : today.length) + "</b>本日のフェア</span><span><b" + (nw ? ' class="dn"' : "") + ">" + nw + "</b>新着のご予約</span><span><b>" + bk + "</b>今週のフェア予約（組）</span></div>" +
+        '<div class="site-f"><span>ヴィラ・ノッツェ · ' + esc(storeName(v.store)) + "と連携</span></div></a>");
+    });
+    return '<div class="sites">' + out.join("") + "</div>";
+  }
+  function digestCard() {
+    var nw = state.ext.inbox.filter(function (x) { return x.st === "new"; }), by = {};
+    nw.forEach(function (x) { by[CH[x.ch].name] = (by[CH[x.ch].name] || 0) + 1; });
+    var od = state.ext.invoices.filter(function (v) { return !v.paid && v.due < TODAY_S; }), fz = fairSchedule().filter(function (x) { return x.date === TODAY_S; });
+    var items = [["live", "新しいご予約・お問い合わせが " + nw.length + "件", Object.keys(by).map(function (k) { return k + " " + by[k] + "件"; }).join("・") || "ありません"],
+      ["ring", "本日のブライダルフェア " + fz.length + "回", fz.map(function (x) { return x.v.short + "「" + x.f.title + "」"; }).join(" / ") || "本日はありません"]];
+    if (od.length) items.push(["wallet", "期限を過ぎた請求 " + od.length + "件", od.map(function (v) { var o = orderOf(v.order); return (o ? o.customer : "") + " " + yen(invAmount(v)); }).join("・")]);
+    items.push(["quote", "お客様の声：スタッフへの感謝 " + X.voices.filter(function (v) { return v.tags.indexOf("スタッフ") >= 0; }).length + "件", voiceStaff().join("・") + "の名前が出ています（体験レポート）"]);
+    var al = aiAlerts("all")[0]; if (al) items.push(["chart", al[2], al[3]]);
+    return '<div class="card ai-card"><div class="card-h"><h3><span class="ai-ic">' + icon("spark") + "</span>今日の要点</h3>" + badge("adv") + '<span class="sub">朝6:00の集計と、いま入った予約から</span></div><div class="card-b stack">' +
+      items.map(function (x) { return '<div class="dg"><span class="dg-ic">' + icon(x[0]) + "</span><div><b>" + esc(x[1]) + "</b><small>" + esc(x[2]) + "</small></div></div>"; }).join("") + "</div></div>";
+  }
+  function fairFunnelCard() {
+    var st = [["フェアのご予約", 42], ["ご来場", 36], ["式場のご成約", 14], ["衣装のご成約", 11]];
+    return '<div class="card"><div class="card-h"><h3>' + icon("ring") + "フェアから衣装まで（今月）</h3>" + badge("adv") + '<span class="sub">2会場の合計（サンプル）</span></div><div class="card-b funnel">' +
+      st.map(function (s, i) { return '<div class="fstep"><span>' + s[0] + '</span><div class="t"><i style="width:' + Math.round(s[1] / st[0][1] * 100) + '%"></i></div><span class="num">' + s[1] + '組</span><span class="num muted">' + (i ? pct(s[1] / st[i - 1][1]) : "—") + "</span></div>"; }).join("") +
+      '<p class="note-sm">式場のプランに含まれるドレス（1点・2点）も、衣装店の受注として数えます。</p></div></div>';
+  }
+  function inboxCard() {
+    var nw = inboxNew();
+    return '<div class="card"><div class="card-h"><h3>' + icon("inbox") + "新しいご予約</h3>" + badge("adv") + (nw.length ? pill(nw.length + "件", "bad") : "") + '<span class="sp"></span><a class="linkbtn" href="#/inbox">予約の受付へ →</a></div>' +
+      (nw.length ? '<div class="wl">' + nw.slice(0, 4).map(function (x) {
+        return '<button type="button" class="wli" data-act="inbox-open" data-id="' + x.id + '"><span class="wn ib t-' + CH[x.ch].tone + '">' + icon(CH[x.ch].ico) + '</span><span class="wt"><b>' + esc(sama(x.name) + " · " + CH[x.ch].name) + "</b><small>" + esc(itemWhere(x) + " · " + agoLabel(x.at) + " · " + itemSummary(x)) + "</small></span>" + icon("chev") + "</button>";
+      }).join("") + "</div>" : '<div class="card-b"><p class="note-sm">新しいご予約はありません。</p></div>') + "</div>";
+  }
+  function voiceCard() {
+    var sh = X.voices.filter(function (v) { return voiceState(v.id).shared; }), v = (sh.length ? sh : X.voices)[0];
+    return '<div class="card voice-mini"><div class="card-h"><h3>' + icon("quote") + (sh.length ? "共有されたお客様の声" : "お客様の声") + "</h3>" + badge("adv") + '<span class="sp"></span><a class="linkbtn" href="#/voice">お客様の声へ →</a></div>' +
+      '<div class="card-b"><p class="vq">' + icon("quote") + "<span>" + markStaff(v.quote, v) + '</span></p><p class="note-sm">' + esc(v.who + " · " + v.room + "（ヴィラ・ノッツェ コルティーレ出雲の体験レポート）") + "</p></div></div>";
+  }
+  function eventsCard() {
+    return '<div class="card"><div class="card-h"><h3>' + icon("bell") + 'イベント・お知らせ</h3><span class="sub">御社サイトのトップから</span></div><div class="card-b evlist">' +
+      X.events.map(function (e) { return '<div class="ev"><span class="nd">' + esc(e.date.replace(/-/g, " / ")) + '</span><span class="ntag">' + esc(e.store) + '</span><span class="nt">' + esc(e.title) + "</span></div>"; }).join("") +
+      X.news.map(function (e) { return '<div class="ev news"><span class="nd">' + esc(e.date.replace(/-/g, ".")) + '</span><span class="ntag">' + esc(e.store) + '</span><span class="nt">' + esc(e.title) + "</span></div>"; }).join("") + "</div></div>";
+  }
+
   // ---------- 保存するデータ（請求・経費・仕訳・休暇・操作の記録） ----------
-  var SAL_ROWS = [["A", "A店"], ["B", "B店"], ["C", "C店"], ["HQ", "本社"]];
+  var SAL_ROWS = [["matsue", "松江本店"], ["izumo", "出雲店"], ["yonago", "米子店"], ["tottori", "鳥取店"], ["HQ", "本社"]];
   function salaryOf(mk) {
     var mn = mNum(mk), bonus = X.salaryBonusMonths.indexOf(mn) >= 0, f = 1 + ((mn % 3) - 1) * 0.003, out = {};
     SAL_ROWS.forEach(function (r) {
@@ -1307,17 +1822,19 @@
     });
     e.sends = X.sends.map(function (x) { return { date: relDay(x.d), text: tpl(x.text) }; });
     e.leave = X.leave.map(function (l, i) {
-      var d = addDays(TODAY, l.d); if (d.getDay() === 2) d = addDays(d, 1); // 定休日（火）に当たる見本は翌日へ
+      var d = addDays(TODAY, l.d); if (storeClosedOn(d)) d = addDays(d, 1); // 定休日（火。祝日は営業）に当たる見本は翌日へ
       return { id: "l" + i, name: l.name, type: l.type, date: ymd(d), days: l.days, st: l.st, note: l.note || "" };
     });
     e.posted = {};
     e.posted[m2] = true; e.posted[monthKey(addMonths(TODAY, -3))] = true;
     e.audit = X.audit.map(function (a) { var t = addDays(TODAY, a.d); t.setHours(a.h, a.m, 0, 0); return { t: t.toISOString(), who: a.who, what: a.what }; });
-    e.seq = { ex: 122, j: 100, l: 100 };
+    e.seq = { ex: 122, j: 100, l: 100, a: 100, inb: 100, pool: 0, b: 100 };
+    seedBookings(e);
     return e;
   }
-  state.ext = saved.ext && Array.isArray(saved.ext.invoices) && saved.ext.seq ? saved.ext : seedExt();
-  state.ui = { expTab: "all", salMonth: monthKey(addMonths(TODAY, -1)), invSel: null, tkcMode: "api", custQ: "", calStore: "all", sheet: false, bell: false, pal: null };
+  state.ext = saved.ext && Array.isArray(saved.ext.invoices) && saved.ext.seq && Array.isArray(saved.ext.inbox) && Array.isArray(saved.ext.appts) ? saved.ext : seedExt();
+  state.ui = { expTab: "all", salMonth: monthKey(addMonths(TODAY, -1)), invSel: null, tkcMode: "api", custQ: "", calStore: "all", sheet: false, bell: false, pal: null,
+    inboxTab: "all", fairVenue: "cortile", fairDate: null, fairTab: "fair", voiceTag: "all", liveN: 0 };
   function audit(what) {
     state.ext.audit.push({ t: new Date().toISOString(), who: U().name, what: what });
     if (state.ext.audit.length > 60) state.ext.audit.splice(0, state.ext.audit.length - 60);
@@ -1346,26 +1863,26 @@
   }
   function viewCustomers() {
     var kpis = '<div class="kpis k4">' + kpi("顧客数", num(share(2418)) + "名", "直近3年にご利用") + kpi("今月の新規", num(share(64)) + "名", "うち Web予約 " + num(share(38)) + "名") +
-      kpi("リピート率", "23%", "振袖 → 袴 → ブライダル", "up") + kpi("式場からのご紹介", "31%", "提携式場から") + "</div>";
+      kpi("リピート率", "23%", "振袖 → 袴 → ウェディング", "up") + kpi("ヴィラ・ノッツェから", "31%", "自社の式場のフェア・ご紹介から") + "</div>";
     var bar = '<div class="filters">' + storeChip() + '<label class="srch">' + icon("search") + '<input type="text" data-act="cust-q" value="' + esc(state.ui.custQ) + '" placeholder="お名前・顧客番号・受注番号" aria-label="お客様を探す"></label><span class="sp"></span>' +
       (canEdit("customers") ? demoBtn("up", "Excelから取込", "デモでは取り込めません。本番では、今の顧客台帳（Excel）をそのまま取り込めます。") +
         demoBtn("plus", "顧客を追加", "デモでは追加できません。本番では、お名前・ご連絡先・ご希望を登録し、受注とひも付けます。", true) : "") + "</div>";
-    return scopeNote("opt", "お客様ごとに、過去のご利用と、次のご提案の機会をまとめます。") + kpis + bar +
+    return scopeNote("opt", "お客様ごとに、過去のご利用と、次のご提案の機会をまとめます（人数・割合はサンプル）。") + kpis + bar +
       '<div class="card"><div class="card-h"><h3>顧客一覧</h3><span class="sub">お客様ごとに、これまでの受注をまとめて見られます</span></div><div id="cust-list">' + custListHtml() + "</div></div>";
   }
   function customerDrawer(no) {
     var o = orderOf(no); if (!o) return "";
     var r = custOf(o), ci = r.ci;
-    var hist = [{ date: o.date, what: bizOf(o.biz).name + "（" + (o.venue || "—") + "）", amt: o.amount, no: o.no, st: o.stage }].concat(r.past.map(function (p) {
-      return { date: dayStr(p[2]), what: p[0], amt: p[1], no: null, st: "完了" };
+    var hist = [{ date: o.date, tbd: o.dateTbd, what: bizOf(o.biz).name + "（" + (o.venue || "—") + "）", amt: o.amount, no: o.no, st: o.stage }].concat(r.past.map(function (p) {
+      return { date: dayStr(p[2]), what: p[0], amt: p[1], no: null, st: ST_DONE };
     }));
     var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">' + esc(ci.id + " · " + storeName(o.store) + " · " + o.source) + "</div><h2>" + esc(o.customer) + '</h2><div class="dh-tags">' + bizTag(o.biz) +
       (r.repeat ? '<span class="tag gold">リピーター</span>' : "") + '<span class="tag plain">メールでのご案内：同意あり</span></div></div>' +
       '<div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
     var tiles = '<div class="itiles">' + itile("はじめてのご来店", slashDate(dayStr(ci.since))) + itile("累計のご利用額", yen(r.ltv)) + itile("ご利用の回数", hist.length + "回") +
-      itile("担当", o.staff) + itile("経路", o.source) + itile("次のお日取り", slashDate(o.date)) + "</div>";
+      itile("担当", o.staff) + itile("経路", o.source) + itile("次のお日取り", oDate(o)) + "</div>";
     var histCard = '<div class="card"><div class="card-h"><h3>ご利用の履歴</h3></div><div class="tbl-wrap"><table><tbody>' + hist.map(function (h) {
-      return "<tr" + (h.no ? ' class="click" data-act="order-open" data-no="' + h.no + '"' : "") + "><td>" + esc(slashDate(h.date)) + '</td><td class="wrap"><b>' + esc(h.what) + "</b>" + (h.no ? ' <span class="ono">' + h.no + "</span>" : "") +
+      return "<tr" + (h.no ? ' class="click" data-act="order-open" data-no="' + h.no + '"' : "") + "><td>" + esc(h.tbd ? "未定" : slashDate(h.date)) + '</td><td class="wrap"><b>' + esc(h.what) + "</b>" + (h.no ? ' <span class="ono">' + h.no + "</span>" : "") +
         "</td><td>" + stagePill(h.st) + '</td><td class="num">' + yen(h.amt) + "</td></tr>";
     }).join("") + "</tbody></table></div></div>";
     var nextCard = '<div class="card"><div class="card-h"><h3>次のご提案の機会</h3><span class="sub">ご利用の流れから</span></div><div class="card-b"><div class="next-op"><span class="ic">' + icon("spark") + "</span><div><b>" + esc(ci.next) + "</b>" +
@@ -1377,36 +1894,50 @@
   }
 
   // ---------- 来店予約 ----------
-  function calDays() { var out = []; for (var i = 0; i < 7; i++) { var d = addDays(TODAY, i); out.push({ i: i, s: ymd(d), closed: d.getDay() === 2 }); } return out; }
-  function apptList() {
-    var days = calDays();
-    return X.appts.map(function (a) {
-      var o = orderOf(a.order); if (!o) return null;
-      var d = a.d; if (days[d] && days[d].closed) d++; // 定休日（火）は翌日へ
-      if (d > 6) return null;
-      return { d: d, date: days[d].s, t: a.t, type: a.type, o: o, staff: a.staff, store: o.store };
-    }).filter(function (a) { return a && mine(a.store); }).sort(function (x, y) { return x.d - y.d || (x.t < y.t ? -1 : 1); });
+  // 予約：{ id, date, t, type, order（受注番号）, staff, store, venue（式場）, name, inbox（受付の番号） }
+  function seedAppts() {
+    return X.appts.map(function (a, i) {
+      var o = P.orders.filter(function (x) { return x.no === a.order; })[0];
+      var d = addDays(TODAY, a.d); if (storeClosedOn(d)) d = addDays(d, 1); // 定休日（火。祝日は営業）は翌日へ
+      return { id: "a" + i, date: ymd(d), t: a.t, type: a.type, order: a.order, staff: a.staff, store: o ? o.store : null };
+    });
   }
+  function calDays() { var out = []; for (var i = 0; i < 7; i++) { var d = addDays(TODAY, i), s = ymd(d); out.push({ i: i, s: s, closed: storeClosedOn(d), hol: holi(s) }); } return out; }
+  function sama(n) { return /様$/.test(n) ? n : n + " 様"; }
+  function apptView(a) {
+    var o = a.order ? orderOf(a.order) : null, v = a.venue ? venueOf(a.venue) : null;
+    return { id: a.id, date: a.date, d: dayDiff(a.date, TODAY_S), t: a.t, type: a.type, o: o, name: o ? o.customer : sama(a.name || ""), staff: a.staff || "",
+      store: a.store || (v ? v.store : null), venue: v, inbox: a.inbox || null };
+  }
+  function apptList() {
+    var last = dayStr(6);
+    return state.ext.appts.filter(function (a) { return a.date >= TODAY_S && a.date <= last; }).map(apptView)
+      .filter(function (a) { return mine(a.store); }).sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : x.t < y.t ? -1 : x.t > y.t ? 1 : 0; });
+  }
+  function apptAct(a) { return a.o ? 'data-act="order-open" data-no="' + a.o.no + '"' : a.inbox ? 'data-act="inbox-open" data-id="' + a.inbox + '"' : ""; }
   function apptChip(a) {
-    var t = X.apptTypes[a.type];
-    return '<button type="button" class="appt t-' + t.tone + '" data-act="order-open" data-no="' + a.o.no + '"><span class="tm">' + a.t + '</span><span class="ty">' + esc(t.name) + "</span><b>" + esc(a.o.customer) + "</b><small>" + esc(storeName(a.store) + " · " + a.staff) + "</small></button>";
+    var t = X.apptTypes[a.type], where = a.venue ? a.venue.short : storeName(a.store);
+    return '<button type="button" class="appt t-' + t.tone + (a.venue ? " ven" : "") + '" ' + apptAct(a) + '><span class="tm">' + a.t + '</span><span class="ty">' + esc(t.name) + "</span><b>" + esc(a.name) + "</b><small>" + esc(where + (a.staff ? " · " + a.staff : "")) + "</small></button>";
   }
   function viewCalendar() {
     var f = U().store ? "all" : state.ui.calStore, days = calDays();
     var list = apptList().filter(function (a) { return f === "all" || a.store === f; });
-    var today = list.filter(function (a) { return a.d === 0; }), fit = list.filter(function (a) { return a.type === "fitting" || a.type === "size"; });
+    var today = list.filter(function (a) { return a.d === 0; }), fit = list.filter(function (a) { return a.type === "fitting" || a.type === "size"; }), ven = list.filter(function (a) { return a.venue; });
     var kpis = '<div class="kpis k4">' + kpi("今週の予約", list.length + "件", slashDate(days[0].s) + "〜" + slashDate(days[6].s)) +
-      kpi("本日の予約", days[0].closed ? "定休日" : today.length + "件", days[0].closed ? "火曜日" : today.length ? "最初は " + today[0].t : "予約はありません") +
-      kpi("試着・補正合わせ", fit.length + "件", "衣装の準備が要ります") + kpi("定休日", "火曜日", "予約は入りません") + "</div>";
-    var legend = '<div class="legend">' + Object.keys(X.apptTypes).map(function (k) { var t = X.apptTypes[k]; return '<span><i class="lg-' + t.tone + '"></i>' + esc(t.name) + "</span>"; }).join("") + "</div>";
-    var filters = '<div class="filters">' + (U().store ? storeChip() : sel("cal-store", "calStore", state.ui.calStore, STORE_OPTS)) + '<span class="note-sm">ご来店は予約制です</span><span class="sp"></span>' +
-      (canEdit("calendar") ? demoBtn("plus", "予約を追加", "デモでは追加できません。本番では、お客様に予約用のリンクを送り、空いている枠から選んでいただけます。", true) : "") + "</div>";
+      kpi("本日の予約", days[0].closed ? "定休日" : today.length + "件", days[0].closed ? "火曜日（祝日は営業）" : today.length ? "最初は " + today[0].t : "予約はありません") +
+      kpi("ご試着・サイズ補正", fit.length + "件", "衣装の準備が要ります") + kpi("式場のフェア・見学・お食事", ven.length + "件", "ヴィラ・ノッツェ") + "</div>";
+    var legend = '<div class="legend">' + Object.keys(X.apptTypes).filter(function (k) { return k !== "tour"; }).map(function (k) { var t = X.apptTypes[k]; return '<span><i class="lg-' + t.tone + '"></i>' + esc(t.name) + "</span>"; }).join("") + "</div>";
+    var filters = '<div class="filters">' + (U().store ? storeChip() : sel("cal-store", "calStore", state.ui.calStore, STORE_OPTS)) +
+      '<span class="note-sm">営業 ' + esc(D.storeHours) + " · 定休日 " + esc(D.storeClosed) + " · ご来店は完全予約制</span><span class=\"sp\"></span>" +
+      (canEdit("calendar") ? '<button class="btn pri" data-act="store-res">' + icon("plus") + "ご来店予約を受ける</button>" : "") + "</div>";
     var cols = days.map(function (d) {
-      var items = list.filter(function (a) { return a.d === d.i; });
-      return '<div class="day' + (d.i === 0 ? " today" : "") + (d.closed ? " closed" : "") + '"><div class="day-h"><span>' + esc(mdw(d.s)) + "</span>" + (d.i === 0 ? "<small>本日</small>" : "") + '</div><div class="day-b">' +
+      var items = list.filter(function (a) { return a.date === d.s; });
+      return '<div class="day' + (d.i === 0 ? " today" : "") + (d.closed ? " closed" : "") + (d.hol ? " hol" : "") + '"><div class="day-h"><span>' + esc(mdw(d.s)) + (d.hol ? '<em class="holi">' + esc(d.hol) + "</em>" : "") + "</span>" +
+        (d.i === 0 ? "<small>本日</small>" : "") + '</div><div class="day-b">' +
         (d.closed ? '<p class="closed-l">定休日</p>' : items.map(apptChip).join("") || '<p class="empty-s">予約なし</p>') + "</div></div>";
     }).join("");
-    return scopeNote("opt", "来店予約は、受注のステージとつながっています。予約を押すと、その受注を開きます。") + kpis + filters + legend + '<div class="cal-wrap"><div class="cal">' + cols + "</div></div>";
+    return scopeNote("opt", "来店予約は、受注のステージとつながっています。予約を押すと、その受注を開きます。式場のフェア・見学・お食事の予約も、同じ予定表に入ります（発展機能）。") +
+      kpis + filters + legend + '<div class="cal-wrap"><div class="cal">' + cols + "</div></div>";
   }
 
   // ---------- 請求と入金 ----------
@@ -1452,10 +1983,11 @@
       (canEdit("invoices") ? '<button class="btn pri" data-act="p3-demo" data-msg="デモではメールを送りません。本番では、この請求書の PDF を、お客様のメールアドレスへ送ります。">' + icon("mail") + "お客様へメールで送る</button>" : "") + "</div>" +
       '<div class="card-b paper-wrap"><div class="paper"><h2>請 求 書</h2><div class="paper-top"><div class="to-box"><span class="to">' + esc(o.customer) + '</span><div class="pmeta">受注 ' + o.no + " · お日取り " + esc(slashDate(o.date)) + "</div>" +
       '<div class="amt-box"><span>ご請求金額（税込）</span><b>' + yen(sub + tax) + '</b></div><div class="pmeta">お支払期限 ' + esc(slashDate(v.due)) + "</div></div>" +
-      '<div class="from"><span class="stamp" aria-hidden="true">印</span><b>（御社名）</b><span>' + esc(storeName(o.store)) + '</span><span class="reg">登録番号 T0000000000000（サンプル）</span><span class="pmeta">請求書番号 ' + esc(v.no) + "<br>発行日 " + esc(slashDate(v.issued)) + "</span></div></div>" +
+      '<div class="from"><span class="stamp" aria-hidden="true">印</span><b>マリエ・やしろ株式会社</b><span>' + esc(storeName(o.store)) + "</span><span class=\"pmeta\">" + esc(storeOf(o.store).addr || "") + "<br>TEL " + esc(storeOf(o.store).tel || "") + "</span>" +
+      '<span class="reg">登録番号 T0000000000000（サンプル）</span><span class="pmeta">請求書番号 ' + esc(v.no) + "<br>発行日 " + esc(slashDate(v.issued)) + "</span></div></div>" +
       '<table><thead><tr><th>品目</th><th class="num">金額（税抜）</th></tr></thead><tbody>' + body + "</tbody></table>" +
       '<div class="tot"><table><tbody><tr><td>小計（10%対象）</td><td class="num">' + yen(sub) + '</td></tr><tr><td>消費税（10%）</td><td class="num">' + yen(tax) + '</td></tr><tr class="gt"><td>合計</td><td class="num">' + yen(sub + tax) + "</td></tr></tbody></table></div>" +
-      '<p class="paper-note">お振込先：〇〇銀行 〇〇支店 普通 0000000（サンプル）。金額・登録番号・お振込先は、すべてサンプルです。</p></div></div></div>';
+      '<p class="paper-note">お振込先：〇〇銀行 〇〇支店 普通 0000000（サンプル）。金額・登録番号・お振込先はサンプルです（社名・店舗の住所と電話は御社サイトから）。</p></div></div></div>';
   }
 
   // ---------- 経費 ----------
@@ -1528,7 +2060,7 @@
       '<tr class="tot"><td>合計</td>' + t.map(function (x) { return '<td class="num">' + yen(x) + "</td>"; }).join("") + '<td class="num">' + yen(g) + "</td></tr></tbody></table></div>";
   }
   function expNewDrawer(d) {
-    var dr = d.draft, os = state.orders.filter(function (o) { return mine(o.store) && o.stage !== "完了" || o.no === dr.order; });
+    var dr = d.draft, os = state.orders.filter(function (o) { return mine(o.store) && o.stage !== ST_DONE || o.no === dr.order; });
     var opt = function (list, v) { return list.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === v ? " selected" : "") + ">" + esc(x[1]) + "</option>"; }).join(""); };
     var head = '<div class="drawer-h"><div class="dh-main"><div class="crumb">経費</div><h2>経費を追加</h2></div><div class="dh-acts"><button class="btn" data-act="drawer-close">閉じる</button></div></div>';
     return head + '<div class="drawer-b"><div class="card"><div class="card-b"><div class="form-grid one">' +
@@ -1574,14 +2106,14 @@
   function viewEmployees() {
     var st = U().store, list = X.employees.filter(function (e) { return !st || e.store === st; });
     var ft = list.filter(function (e) { return e.type === "正社員"; }).length;
-    var kpis = '<div class="kpis k4">' + kpi("従業員数", st ? list.length + "名" : "198名", st ? "正社員 " + ft + "名・パート/アルバイト " + (list.length - ft) + "名" : "正社員 104名・パート/アルバイト 94名") +
+    var kpis = '<div class="kpis k4">' + kpi("従業員数", st ? list.length + "名" : "140名", st ? "正社員 " + ft + "名・パート/アルバイト " + (list.length - ft) + "名（サンプル）" : "会社概要の人数（式場・フォトスタジオを含む）") +
       kpi("今年度の入社", st ? "1名" : "9名", st ? "今月 0名" : "今月 3名") + kpi("本日の休暇", st ? "1名" : "4名", "承認済みの休暇から") + kpi("契約の更新予定", st ? "1名" : "6名", "パート・アルバイト · 月末まで") + "</div>";
     var rows = list.map(function (e) {
       return '<tr><td class="muted">' + e.id + '</td><td><div class="who"><span class="av sm">' + esc(e.name.charAt(0)) + "</span><b>" + esc(e.name) + "</b></div></td><td>" + esc(storeLabel(e.store)) + "</td><td>" + esc(e.pos) + "</td><td>" + esc(e.type) +
         "</td><td>" + esc(e.joined) + '</td><td class="num">' + e.leave.toFixed(1) + '日</td><td><span class="chip static">' + esc(roleLabel(e.role)) + "</span></td></tr>";
     }).join("");
     var bar = (state.role === "exec" ? demoBtn("up", "Excelから取込", "デモでは取り込めません。本番では、今の従業員台帳（Excel）をそのまま取り込めます。") + demoBtn("plus", "従業員を追加", "デモでは追加できません。本番では、入社の手続きに合わせて登録し、システムの権限も同時に決めます。", true) : "");
-    return scopeNote("adv", "従業員の台帳と、有給の残り・システムの権限を一か所で管理します。") + kpis +
+    return scopeNote("adv", "従業員の台帳と、有給の残り・システムの権限を一か所で管理します（下の一覧の氏名はサンプル）。") + kpis +
       '<div class="card"><div class="card-h"><h3>従業員一覧</h3><span class="sub">' + (st ? esc(storeName(st)) + "の方（サンプル）" : "サンプルの " + list.length + "名を表示") + '</span><span class="sp"></span>' + bar + "</div>" +
       '<div class="tbl-wrap"><table><thead><tr><th>ID</th><th>氏名</th><th>所属</th><th>役職</th><th>雇用の形</th><th>入社日</th><th class="num">有給の残り</th><th>システムの権限</th></tr></thead><tbody>' + rows + "</tbody></table></div></div>";
   }
@@ -1607,7 +2139,8 @@
     var diff = dayDiff(date, TODAY_S), dow = toDate(date).getDay();
     if (diff < 0) out.push(["bad", "過ぎた日は申請できません。"]);
     else if (diff < 3) out.push(["warn", "原則として3日前までに店長へ申し出ます（就業規則 第12条）。"]);
-    if (dow === 2) out.push(["info", "火曜日は定休日です。休暇の申請は要りません。"]);
+    if (storeClosedOn(toDate(date))) out.push(["info", "火曜日は定休日です。休暇の申請は要りません。"]);
+    else if (dow === 2) out.push(["warn", "この火曜日は祝日（" + holi(date) + "）のため営業日です。"]);
     else if (dow === 0 || dow === 6) out.push(["warn", "土日は挙式・ブライダルフェアが多い日です。店長と相談のうえで申請してください（第12条）。"]);
     if (!out.length) out.push(["good", "この日は、取得を控える日に当たりません。"]);
     return out;
@@ -1664,7 +2197,7 @@
   }
 
   // ---------- ユーザー・権限 ----------
-  var PERM_ROWS = ["ai", "docs", "results", "input", "confirm", "orders", "customers", "calendar", "inventory", "invoices", "expenses", "tkc", "employees", "leave", "users"];
+  var PERM_ROWS = ["ai", "docs", "voice", "results", "input", "confirm", "inbox", "calendar", "fairs", "customers", "orders", "inventory", "invoices", "expenses", "tkc", "employees", "leave", "users"];
   function viewUsers() {
     var matrix = '<div class="card"><div class="card-h"><h3>役職ごとの権限</h3><span class="sub">利益の数字は、役員と経理の方だけに表示します</span></div><div class="tbl-wrap"><table class="matrix"><thead><tr><th>機能</th>' +
       D.roles.map(function (r) { return "<th>" + esc(r.label) + "</th>"; }).join("") + "</tr></thead><tbody>" + PERM_ROWS.map(function (id) {
@@ -1720,6 +2253,7 @@
   function workItems() {
     var r = state.role, out = [];
     function add(page, label, n, unit, sub, tone) { if (n > 0 && allowed(page)) out.push({ page: page, label: label, n: n, unit: unit, sub: sub, tone: tone }); }
+    add("inbox", "新しいご予約・お問い合わせ", inboxNew().length, "件", "確かめて、日時を確定します", "bad");
     if (r === "accounting") add("confirm", "実績の確定", pendingCount(), "件", "現場からの入力を確かめて確定します", "warn");
     if (approver()) {
       var ex = expList();
@@ -1734,21 +2268,22 @@
       add("invoices", "今日が期限の請求", td.length, "件", td.length ? orderOf(td[0].order).customer + " · " + yen(invAmount(td[0])) : "", "warn");
     }
     if (r === "accounting") add("tkc", "TKC へ送れる仕訳", state.ext.journal.filter(function (j) { return j.st === "送信可"; }).length, "件", "まとめて送れます", "good");
-    if (r === "manager" || r === "staff") add("orders", "30日以内のお日取り", state.orders.filter(function (o) { return mine(o.store) && o.stage !== "完了" && o.date >= TODAY_S && o.date <= dayStr(30); }).length, "件", "準備の進み具合を確かめます", "gold");
+    if (r === "manager" || r === "staff") add("orders", "30日以内のお日取り", state.orders.filter(function (o) { return mine(o.store) && o.stage !== ST_DONE && o.date >= TODAY_S && o.date <= dayStr(30); }).length, "件", "準備の進み具合を確かめます", "gold");
     if (r === "staff" || r === "parttime" || r === "accounting") add("leave", "自分の休暇の申請", state.ext.leave.filter(function (l) { return l.name === U().name && l.st === "申請中"; }).length, "件", "店長の承認待ちです", "info");
     if (r !== "accounting") add("inventory", "今週戻る予定の衣装", state.costumes.filter(function (c) { return (c.status === "cleaning" || c.status === "repair") && c.backDate && c.backDate <= dayStr(7) && mine(c.store); }).length, "点", "クリーニング・お直しから戻ります", "mute");
     return out;
   }
   function workCount(w) { return w.filter(function (x) { return x.unit === "件"; }).reduce(function (s, x) { return s + x.n; }, 0); }
   var DESC = {
-    ai: "質問すると、根拠の箇所を示して答えます", docs: "答えに使う文書と、文書ごとの閲覧範囲", results: "施行月・成約月で、前年比・計画比", input: "成約・施行の数字を入力します", confirm: "現場の入力を確かめて確定します",
-    orders: "問合せから完了までを8つのステージで", customers: "お客様ごとのご利用と、次のご提案", calendar: "1週間の来店予約（試着・補正・前撮り）", inventory: "衣装ごとの空き状況・予約・メンテナンス",
+    ai: "質問すると、根拠の箇所を示して答えます", docs: "答えに使う文書と、文書ごとの閲覧範囲", voice: "体験レポートなどの声を集めて、みんなで共有", results: "施行月・成約月で、前年比・計画比", input: "成約・施行の数字を入力します", confirm: "現場の入力を確かめて確定します",
+    inbox: "Web・LINE・お電話のご予約を1か所で", fairs: "ヴィラ・ノッツェのフェアの空席とご予約",
+    orders: "ご来店予約からご返却までを8つのステージで", customers: "お客様ごとのご利用と、次のご提案", calendar: "1週間の来店予約（ご試着・補正・フェア）", inventory: "写真で選べる衣装の空き状況・予約",
     invoices: "内金・残金の請求と入金（適格請求書）", expenses: "経費の承認と、受注ごとの粗利", tkc: "TKC へ仕訳を一方向で渡します", employees: "従業員の台帳・有給の残り・権限", leave: "休暇の申請と承認、年5日の取得", users: "役職ごとの権限・2段階認証・操作の記録"
   };
   function todayCard(list, closed) {
-    var body = closed ? '<div class="card-b"><p class="note-sm">本日は定休日です。</p></div>' : list.length ? '<div class="wl">' + list.map(function (a) {
+    var body = closed ? '<div class="card-b"><p class="note-sm">本日は定休日です（火曜日。祝日は営業）。</p></div>' : list.length ? '<div class="wl">' + list.map(function (a) {
       var t = X.apptTypes[a.type];
-      return '<button type="button" class="wli" data-act="order-open" data-no="' + a.o.no + '"><span class="tm">' + a.t + '</span><span class="wt"><b>' + esc(a.o.customer) + '</b><small><i class="dotc lg-' + t.tone + '"></i>' + esc(t.name + " · " + storeName(a.store) + " · " + a.staff) + "</small></span>" + icon("chev") + "</button>";
+      return '<button type="button" class="wli" ' + apptAct(a) + '><span class="tm">' + a.t + '</span><span class="wt"><b>' + esc(a.name) + '</b><small><i class="dotc lg-' + t.tone + '"></i>' + esc(t.name + " · " + (a.venue ? a.venue.short : storeName(a.store)) + (a.staff ? " · " + a.staff : "")) + "</small></span>" + icon("chev") + "</button>";
     }).join("") + "</div>" : '<div class="card-b"><p class="note-sm">本日の予約はありません。</p></div>';
     return '<div class="card"><div class="card-h"><h3>' + icon("cal") + "本日のご来店</h3>" + badge("opt") + '<span class="sp"></span><a class="linkbtn" href="#/calendar">来店予約へ →</a></div>' + body + "</div>";
   }
@@ -1771,7 +2306,9 @@
     var cs = state.costumes, cnt = {};
     cs.forEach(function (c) { var l = cosStatus(c).label; cnt[l] = (cnt[l] || 0) + 1; });
     var labels = [["貸出可", "good"], ["予約済", "gold"], ["貸出中", "rose"], ["クリーニング中", "info"], ["お直し中", "warn"]];
-    return '<div class="card"><div class="card-h"><h3>' + icon("box") + "本日の衣装在庫</h3>" + badge("opt") + '<span class="sub">サンプル ' + cs.length + '点</span><span class="sp"></span><a class="linkbtn" href="#/inventory">衣装在庫へ →</a></div><div class="card-b stack">' +
+    var picks = cs.filter(function (c) { return c.pick && c.img; }).slice(0, 6);
+    return '<div class="card"><div class="card-h"><h3>' + icon("hanger") + "本日の衣装在庫</h3>" + badge("opt") + '<span class="sub">デモの在庫 ' + cs.length + '点</span><span class="sp"></span><a class="linkbtn" href="#/inventory">衣装在庫へ →</a></div><div class="card-b stack">' +
+      '<div class="pickrow">' + picks.map(function (c) { return '<button type="button" class="pk" data-act="cos-open" data-code="' + esc(c.code) + '" title="' + esc(c.name) + '"><img src="' + esc(c.img[0]) + '" alt="' + esc(c.name) + '" loading="lazy"><span>' + esc(cosStatus(c).label) + "</span></button>"; }).join("") + "</div>" +
       labels.map(function (l) { var n = cnt[l[0]] || 0; return '<div class="hbar"><span>' + l[0] + '</span><div class="t"><i class="bg-' + l[1] + '" style="width:' + (n / cs.length * 100).toFixed(0) + '%"></i></div><span class="num">' + n + "点</span></div>"; }).join("") + "</div></div>";
   }
   function modsHtml() {
@@ -1782,17 +2319,18 @@
       if (!g) { g = { name: n.grp, items: [] }; groups.push(g); }
       g.items.push(n);
     });
-    return '<div class="sec-h"><h3>すべての機能</h3><span class="sub">業務ごとに並べています。印のないものが、ご依頼の範囲（第1・第2段階）です。</span></div><div class="mods">' + groups.map(function (g) {
+    return '<div class="sec-h center">' + hpair("すべての機能", "Menu", "h3") + '<span class="sub">業務ごとに並べています。印のないものが、ご依頼の範囲（第1・第2段階）です。</span></div><div class="mods">' + groups.map(function (g) {
       return '<div class="card mod"><h4>' + esc(g.name) + "</h4>" + g.items.map(function (n) {
         return '<a href="#/' + n.id + '"><span class="mi">' + icon(n.ico) + '</span><span class="mt"><b>' + esc(n.label) + badge(n.ph === "opt" || n.ph === "adv" ? n.ph : "") + "</b><small>" + esc(DESC[n.id] || "") + "</small></span></a>";
       }).join("") + "</div>";
     }).join("") + "</div>";
   }
   function viewHome() {
-    var u = U(), a = A(), w = workItems(), closed = TODAY.getDay() === 2, tdy = allowed("calendar") ? apptList().filter(function (x) { return x.d === 0; }) : [];
+    var u = U(), a = A(), w = workItems(), closed = storeClosedOn(TODAY), exec = state.role === "exec";
+    var tdy = allowed("calendar") ? apptList().filter(function (x) { return x.d === 0; }) : [], tdyStore = tdy.filter(function (x) { return !x.venue; });
     var stats = [];
-    if (allowed("calendar")) stats.push(["本日のご来店", closed ? "定休日" : tdy.length + "件", closed ? "火曜日" : tdy.length ? "最初は " + tdy[0].t : "予約なし"]);
-    stats.push(["確認待ち", workCount(w) + "件", w.length ? w[0].label : "ありません"]);
+    if (allowed("inbox")) { var nw = inboxNew(); stats.push(["新しいご予約", nw.length + "件", nw.length ? "確認を待っています" : "ありません"]); }
+    if (allowed("calendar")) stats.push(["本日のご来店", closed ? "定休日" : tdyStore.length + "件", closed ? "火曜日（祝日は営業）" : tdyStore.length ? "最初は " + tdyStore[0].t : "予約なし"]);
     if (a.results) {
       var st = a.results === "full" ? "all" : u.store;
       var ytd = sumRange("sekou", FY_START_S, YEST_S, st), ly = sumRange("sekou", ymd(addYears(FY_START, -1)), ymd(addYears(YEST, -1)), st);
@@ -1801,27 +2339,36 @@
       var me = empOf(u.name);
       if (me) stats.push(["有給の残り", me.leave.toFixed(1) + "日", "今年度 " + me.taken + "日取得"]);
     }
-    var hero = '<section class="hero"><span class="hero-glow" aria-hidden="true"></span><div class="hero-t"><span class="hero-date">' + esc(TODAY.getFullYear() + "年" + (TODAY.getMonth() + 1) + "月" + TODAY.getDate() + "日（" + WD.charAt(TODAY.getDay()) + "）") + "</span>" +
-      "<h2>" + greeting() + "、" + esc(family(u.name)) + "さん</h2><p>" + esc(roleLabel(state.role)) + "としてログインしています · 見られる画面と数字は、役職によって変わります</p></div>" +
-      '<div class="hero-s">' + stats.map(function (s) { return '<div class="stat"><span class="l">' + esc(s[0]) + '</span><span class="v">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + "</span></div>"; }).join("") + "</div></section>";
+    if (stats.length < 3) stats.push(["確認待ち", workCount(w) + "件", w.length ? w[0].label : "ありません"]);
+    var hero = '<section class="hero"><span class="mv" aria-hidden="true"></span><span class="mv-shade" aria-hidden="true"></span>' +
+      '<div class="hero-t"><span class="script sm">Yashiro</span><span class="hero-date">' + esc(TODAY.getFullYear() + "年" + (TODAY.getMonth() + 1) + "月" + TODAY.getDate() + "日（" + WD.charAt(TODAY.getDay()) + "）" + (holi(TODAY_S) ? " " + holi(TODAY_S) : "")) + "</span>" +
+      "<h2>" + greeting() + "、" + esc(family(u.name)) + "さん</h2><p>" + esc(roleLabel(state.role)) + (u.store ? "（" + esc(storeName(u.store)) + "）" : "") + "としてログインしています · 見られる画面と数字は、役職によって変わります</p></div>" +
+      '<div class="hero-s">' + stats.map(function (s) { return '<div class="stat"><span class="l">' + esc(s[0]) + '</span><span class="v">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + "</span></div>"; }).join("") + "</div>" + newsStrip(true) + "</section>";
+    var live = exec ? '<div class="sec-h center">' + hpair("いまの会社", "Live", "h3") + '<span class="sub"><span class="live-dot"></span>4店舗と2つの式場の、いまの様子です。予約が入ると、そのまま流れてきます（数字はサンプル）。</span></div>' +
+      siteTiles() + '<div class="row g2e">' + liveCard() + '<div class="stack">' + digestCard() + fairFunnelCard() + "</div></div>" : "";
     var row1 = [];
+    if (allowed("inbox") && !exec) row1.push(inboxCard());
     if (allowed("calendar")) row1.push(todayCard(tdy, closed));
     row1.push(workCard(w));
     if (a.results) row1.push(aiCard(a.results === "full" ? "all" : u.store));
     var row2 = [];
     if (allowed("orders")) row2.push(funnelCard());
     if (allowed("inventory")) row2.push(stockCard());
-    return hero + '<div class="row auto">' + row1.join("") + "</div>" + (row2.length ? '<div class="row g2e">' + row2.join("") + "</div>" : "") + modsHtml() +
+    var row3 = [voiceCard(), eventsCard()];
+    return hero + live + '<div class="row auto">' + row1.join("") + "</div>" + (row2.length ? '<div class="row g2e">' + row2.join("") + "</div>" : "") + '<div class="row g2e">' + row3.join("") + "</div>" + modsHtml() +
       '<div class="notice"><b>このデモについて</b><ul>' +
-      "<li>規程・氏名・店舗・数字は、すべてサンプルです。</li>" +
+      "<li>店舗・式場・フェア・衣装・体験レポートの名前と写真は、御社と式場のサイトから（2026年10月8日時点）。お客様・従業員の氏名、金額・実績の数字、規程はサンプルです。</li>" +
       "<li>規程アシスタントは、本番では AI（Azure OpenAI）が文章で答えます。このデモでは、サンプルの規程から当てはまる条文を探して表示します。</li>" +
       "<li>印のない機能が、ご依頼の範囲（第1・第2段階）です。「オプション」は第3段階、「発展機能」はこれからのご提案です。</li>" +
+      "<li>「予約の受付」の「Web から予約が入ったとき（デモ）」で、予約が届く様子を試せます。役員のホームを開いたままにすると、予約が届きます。</li>" +
       "<li>上部の役職の欄を切り替えると、ほかの役職の見え方を確かめられます。⌘K（Windows は Ctrl+K）で、画面をさがしたり規程に質問したりできます。</li>" +
       "<li>このデモで入力した内容は、お使いのブラウザの中だけに残ります。</li></ul></div>";
   }
 
   // ---------- 検索（⌘K） ----------
   var PAL_ACTS = [
+    ["inbox-sim", "Web から予約が入ったとき（デモ）", "予約の受付", "live", function () { return canEdit("inbox"); }, null],
+    ["store-res", "ご来店予約を受ける", "来店予約", "cal", function () { return canEdit("calendar"); }, "calendar"],
     ["order-new", "新規受注を登録", "受注管理", "plus", function () { return canEdit("orders"); }, "orders"],
     ["leave-new", "休暇を申請する", "休暇", "leave", function () { return allowed("leave"); }, "leave"],
     ["exp-new", "経費を追加", "経費", "wallet", function () { return canEdit("expenses"); }, "expenses"],
@@ -1871,7 +2418,7 @@
   function getTheme() { try { return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light"; } catch (e) { return "light"; } }
   function applyTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
-    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", t === "dark" ? "#141413" : "#F6F5F2");
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", t === "dark" ? "#141413" : "#FFFFFF");
   }
   applyTheme(getTheme());
 
@@ -1906,7 +2453,7 @@
       var o = orderOf(v.order);
       v.paid = TODAY_S;
       if (o) {
-        if (v.type === "内金") { o.paid = (o.paid || 0) + v.base; if (o.stage === "成約") { o.checks = o.checks || []; o.checks[1] = true; } o.history.push([TODAY_S, "内金の入金を確認（" + v.no + "）"]); }
+        if (v.type === "内金") { o.paid = (o.paid || 0) + v.base; if (o.stage === ST_CONTRACT) { o.checks = o.checks || []; o.checks[1] = true; } o.history.push([TODAY_S, "内金の入金を確認（" + v.no + "）"]); }
         else { o.paid = o.amount; if (o.stage === "当日") { o.checks = o.checks || []; o.checks[1] = true; } o.history.push([TODAY_S, "残金の入金を確認（" + v.no + "）"]); }
       }
       addJournal("bank", v.type === "内金" ? "adv" : "ar", v.no + " · " + v.order, invAmount(v));
@@ -1935,7 +2482,7 @@
       if (!(amt > 0)) { toast("金額（税込）を入力してください。"); return; }
       var o = dr.order ? orderOf(dr.order) : null;
       var no = "EX-26-0" + (state.ext.seq.ex++);
-      state.ext.expenses.push({ no: no, date: dr.date || TODAY_S, store: o ? o.store : U().store || "A", cat: dr.cat, desc: String(dr.supplier).trim() + (o ? " · " + o.customer : ""), order: o ? o.no : null, amount: amt, st: "承認待ち", chk: "一致", quote: null });
+      state.ext.expenses.push({ no: no, date: dr.date || TODAY_S, store: o ? o.store : U().store || "matsue", cat: dr.cat, desc: String(dr.supplier).trim() + (o ? " · " + o.customer : ""), order: o ? o.no : null, amount: amt, st: "承認待ち", chk: "一致", quote: null });
       audit("経費を申請（" + no + " · " + yen(amt) + "）");
       state.p3.drawer = d.back ? { type: "order", no: d.back } : null;
       save(); render(); toast("経費を申請しました。承認されると、TKC への仕訳に入ります。");
@@ -1979,7 +2526,7 @@
     "leave-save": function () {
       var d = state.p3.drawer, dr = d.draft;
       if (!dr.date || dr.date < TODAY_S) { toast("日付を選んでください（今日より後の日）。"); return; }
-      if (toDate(dr.date).getDay() === 2) { toast("火曜日は定休日です。ほかの日を選んでください。"); return; }
+      if (storeClosedOn(toDate(dr.date))) { toast("火曜日は定休日です。ほかの日を選んでください。"); return; }
       var days = dr.type === "年次有給休暇（半日）" ? 0.5 : 1, ap = leaveApprover(U().name);
       state.ext.leave.push({ id: "l" + (state.ext.seq.l++), name: U().name, type: dr.type, date: dr.date, days: days, st: "申請中", note: dr.reason || "" });
       audit("休暇を申請（" + dr.type + " · " + slashDate(dr.date) + "）");
@@ -1990,6 +2537,70 @@
     "leave-ok": function (el) { var l = state.ext.leave.filter(function (x) { return x.id === el.getAttribute("data-id"); })[0]; if (!l) return; l.st = "承認済"; audit("休暇を承認（" + l.name + " · " + slashDate(l.date) + "）"); save(); render(); toast(l.name + "さんの休暇を承認しました。"); },
     "leave-ng": function (el) { var l = state.ext.leave.filter(function (x) { return x.id === el.getAttribute("data-id"); })[0]; if (!l) return; l.st = "却下"; l.note = "日を変えてもらう（店長より）"; audit("休暇を却下（" + l.name + " · " + slashDate(l.date) + "）"); save(); render(); toast("却下しました。" + l.name + "さんに、日を変えてもらうようお知らせします。"); },
     "cal-store": function (el) { state.ui.calStore = el.value; render(); },
+    "inbox-open": function (el) { state.ui.bell = false; state.p3.drawer = { type: "inbox", id: el.getAttribute("data-id"), pick: 0 }; render(); },
+    "inbox-tab": function (el) { state.ui.inboxTab = el.getAttribute("data-v"); render(); },
+    "inbox-sim": function () { simulateArrival(false); },
+    "in-pick": function (el) { state.p3.drawer.pick = +el.getAttribute("data-i"); render(); },
+    "in-hold": function (el) { var x = itemOf(el.getAttribute("data-id")); if (!x) return; x.st = "hold"; audit(CH[x.ch].name + "をお電話で調整（" + sama(x.name) + "）"); save(); render(); toast("「お電話で調整中」にしました。日時が決まったら、ここで確定します。"); },
+    "in-confirm": function (el) { var x = itemOf(el.getAttribute("data-id")); if (!x) return; var msg = confirmItem(x, state.p3.drawer || {}); save(); render(); toast(msg + "（デモではメールを送りません）"); },
+    "push-open": function (el) {
+      if (pushEl) pushEl.classList.remove("show");
+      state.p3.drawer = { type: "inbox", id: el.getAttribute("data-id"), pick: 0 };
+      if (route() !== "inbox") { state.keepDrawer = true; location.hash = "#/inbox"; } else render();
+    },
+    "push-close": function () { if (pushEl) pushEl.classList.remove("show"); },
+    "fair-venue": function (el) { state.ui.fairVenue = el.getAttribute("data-v"); state.ui.fairDate = null; render(); },
+    "fair-venue-go": function (el) { state.ui.fairVenue = el.getAttribute("data-v"); state.ui.fairDate = null; state.ui.fairTab = "fair"; go("fairs"); },
+    "fair-jump": function (el) { state.ui.fairVenue = el.getAttribute("data-v"); state.ui.fairDate = el.getAttribute("data-d"); state.ui.fairTab = "fair"; go("fairs"); },
+    "site-go": function (el) { state.ui.calStore = el.getAttribute("data-s"); go("calendar"); },
+    "fair-date": function (el) { state.ui.fairDate = el.getAttribute("data-d"); render(); },
+    "fair-tab": function (el) { state.ui.fairTab = el.getAttribute("data-v"); render(); },
+    "book-open": function (el) {
+      state.p3.drawer = { type: "book", draft: { kind: el.getAttribute("data-k"), venue: el.getAttribute("data-v"), item: el.getAttribute("data-f"), date: el.getAttribute("data-d"), t: el.getAttribute("data-t"),
+        name: "", kana: "", tel: "", mail: "", people: el.getAttribute("data-k") === "meal" ? 6 : 2, via: "お電話", note: "", dress: true } };
+      render();
+    },
+    "bk-via": function (el) { state.p3.drawer.draft.via = el.getAttribute("data-v"); render(); },
+    "bk-save": function () {
+      var d = state.p3.drawer, dr = d.draft;
+      if (!String(dr.name).trim() || !String(dr.tel).trim()) { toast("お名前と電話番号を入力してください。"); return; }
+      var id = "in" + (state.ext.seq.inb++);
+      var x = { id: id, ch: dr.kind === "fair" ? "fair" : "meal", via: dr.via, st: "new", name: String(dr.name).trim(), kana: dr.kana, tel: dr.tel, mail: dr.mail, people: +dr.people, venue: dr.venue, date: dr.date, note: dr.note, dress: !!dr.dress, at: new Date().toISOString() };
+      if (dr.kind === "fair") { x.fair = dr.item; x.slot = dr.t; } else { x.meal = dr.item; x.time = dr.t; }
+      addBooking(dr.kind, dr.venue, dr.item, dr.date, dr.t, id);
+      state.ext.inbox.push(x);
+      var msg = confirmItem(x, { dress: dr.kind === "fair" ? !!dr.dress : false });
+      state.p3.drawer = { type: "inbox", id: id };
+      save(); render(); toast(msg);
+    },
+    "store-res": function () {
+      var st = U().store || "matsue";
+      state.p3.drawer = { type: "storeres", draft: { store: st, date: openDay(2), t: "", wants: [], name: "", kana: "", tel: "", detail: "", staff: staffOf(st)[0] } };
+      render();
+    },
+    "sr-slot": function (el) { state.p3.drawer.draft.t = el.getAttribute("data-t"); render(); },
+    "sr-want": function (el) { var a = state.p3.drawer.draft.wants, v = el.getAttribute("data-v"), i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else a.push(v); render(); },
+    "sr-save": function () {
+      var dr = state.p3.drawer.draft;
+      if (!dr.wants.length) { toast("ご希望衣装を選んでください。"); return; }
+      if (storeClosedOn(toDate(dr.date))) { toast("火曜日は定休日です（祝日は営業）。ほかの日を選んでください。"); return; }
+      if (!dr.t) { toast("時間を選んでください。"); return; }
+      if (!String(dr.name).trim() || !String(dr.tel).trim()) { toast("お名前と電話番号を入力してください。"); return; }
+      var id = "in" + (state.ext.seq.inb++);
+      var x = { id: id, ch: "store", via: "お電話", st: "new", name: String(dr.name).trim(), kana: dr.kana, tel: dr.tel, mail: "", store: dr.store, wants: dr.wants.slice(), detail: dr.detail, prefs: [[dr.date, dr.t]], at: new Date().toISOString() };
+      state.ext.inbox.push(x);
+      var msg = confirmItem(x, { pick: 0, staff: dr.staff });
+      state.p3.drawer = null; save(); go("calendar"); toast(msg);
+    },
+    "voice-tag": function (el) { state.ui.voiceTag = el.getAttribute("data-v"); render(); },
+    "voice-like": function (el) { var id = el.getAttribute("data-id"), v = state.ext.voice[id] = state.ext.voice[id] || {}; v.liked = !v.liked; v.likes = (v.likes || 0) + (v.liked ? 1 : -1); save(); render(); },
+    "voice-share": function (el) {
+      var id = el.getAttribute("data-id"), v = state.ext.voice[id] = state.ext.voice[id] || {}, src = X.voices.filter(function (x) { return x.id === id; })[0];
+      v.shared = true; v.by = U().name; v.at = new Date().toISOString();
+      audit("お客様の声を共有（" + (src ? src.who : id) + "）");
+      save(); render(); toast("従業員に共有しました。全員のホームに表示されます。");
+    },
+    "voice-send": function (el) { toast(el.getAttribute("data-n") + "とご本人の店長に届けました（デモでは送りません）。"); },
     "bell": function () { state.ui.bell = !state.ui.bell; render(); },
     "sheet": function () { state.ui.sheet = !state.ui.sheet; render(); },
     "sheet-close": function () { state.ui.sheet = false; render(); },
@@ -2002,7 +2613,8 @@
   // ---------- 描画 ----------
   var VIEWS = {
     ai: viewAI, docs: viewDocs, input: viewInput, confirm: viewConfirm, results: viewResults, orders: viewOrders, inventory: viewInventory,
-    customers: viewCustomers, calendar: viewCalendar, invoices: viewInvoices, expenses: viewExpenses, tkc: viewTkc, employees: viewEmployees, leave: viewLeave, users: viewUsers
+    customers: viewCustomers, calendar: viewCalendar, invoices: viewInvoices, expenses: viewExpenses, tkc: viewTkc, employees: viewEmployees, leave: viewLeave, users: viewUsers,
+    inbox: viewInbox, fairs: viewFairs, voice: viewVoice
   };
   function render() {
     if (!state.authed) {
@@ -2027,7 +2639,7 @@
     var dw = document.querySelector(".drawer");
     document.body.classList.toggle("noscroll", !!dw || state.ui.sheet || !!state.ui.pal);
     if (dw) {
-      var d = state.p3.drawer, key = d.type + ":" + (d.no || d.code || (d.draft && d.draft.no) || "new") + ":" + (d.step || "");
+      var d = state.p3.drawer, key = d.type + ":" + (d.no || d.code || d.id || (d.draft && d.draft.no) || "new") + ":" + (d.step || "");
       dw.setAttribute("data-key", key);
       if (key === dwKey) dw.scrollTop = dwTop;
     }
@@ -2093,7 +2705,7 @@
       try { localStorage.removeItem(KEY); } catch (e) { /* 何もしない */ }
       state.entries = seedEntries(); state.chat = []; state.openDoc = null;
       state.orders = seedOrders(); state.costumes = seedCostumes(); state.p3.drawer = null;
-      state.ext = seedExt(); state.ui.sheet = false; state.ui.bell = false; state.ui.pal = null; state.ui.invSel = null;
+      state.ext = seedExt(); state.ui.sheet = false; state.ui.bell = false; state.ui.pal = null; state.ui.invSel = null; state.ui.liveN = 0;
       save(); render();
       toast("デモのデータを元に戻しました。");
     }
@@ -2129,6 +2741,15 @@
     }
     if (el.hasAttribute("data-xf") && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-xf")] = el.value; return; }
     if (el.hasAttribute("data-lv") && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-lv")] = el.value; render(); return; }
+    if (el.hasAttribute("data-bk") && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-bk")] = el.type === "checkbox" ? el.checked : el.value; return; }
+    if (el.hasAttribute("data-sr") && state.p3.drawer) {
+      var k = el.getAttribute("data-sr"), dr2 = state.p3.drawer.draft; dr2[k] = el.value;
+      if (k === "store") { dr2.staff = staffOf(dr2.store)[0]; dr2.t = ""; }
+      if (k === "date") dr2.t = "";
+      if (el.tagName === "SELECT" || k === "date") render();
+      return;
+    }
+    if (el.hasAttribute("data-inf") && state.p3.drawer) { state.p3.drawer[el.getAttribute("data-inf")] = el.type === "checkbox" ? el.checked : el.value; return; }
     if (!el.matches("select[data-act]")) return;
     var f = acts[el.getAttribute("data-act")];
     if (f) f(el, ev);
@@ -2138,6 +2759,9 @@
     if (el.hasAttribute("data-draft") && el.tagName !== "SELECT") { setDraft(el.getAttribute("data-draft"), el.value); return; }
     if (el.hasAttribute("data-xf") && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-xf")] = el.value; return; }
     if (el.hasAttribute("data-lv") && el.tagName !== "SELECT" && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-lv")] = el.value; return; }
+    if (el.hasAttribute("data-bk") && el.type !== "checkbox" && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-bk")] = el.value; return; }
+    if (el.hasAttribute("data-sr") && el.tagName !== "SELECT" && el.type !== "date" && state.p3.drawer) { state.p3.drawer.draft[el.getAttribute("data-sr")] = el.value; return; }
+    if (el.hasAttribute("data-inf") && el.tagName === "TEXTAREA" && state.p3.drawer) { state.p3.drawer[el.getAttribute("data-inf")] = el.value; return; }
     if (el.id === "pal-q" && state.ui.pal) { state.ui.pal.q = el.value; state.ui.pal.i = 0; palRefresh(); return; }
     if (el.getAttribute("data-act") === "cust-q") {
       state.ui.custQ = el.value;
