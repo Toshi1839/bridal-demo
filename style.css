@@ -1099,6 +1099,7 @@ mark { background: linear-gradient(transparent 55%, #F6E2A6 55%); color: inherit
 }
 @media (max-width: 900px) {
   .vtab { display: none; }
+  .login { grid-template-columns: 1fr; }
   .login-art { min-height: 560px; }
   .script { font-size: 86px; }
   .lg-hero { padding: 36px 18px 120px; }
